@@ -47,7 +47,20 @@ public class PlayerController : MonoBehaviour
         Vector3 dir = (camR * x + camF * z);
         if (dir.sqrMagnitude > 1f) dir.Normalize();
 
-        cc.Move(dir * (moveSpeed * Time.deltaTime));
+        var shadowCtrl = GetComponent<ShadowInteractController>();
+        float speed = moveSpeed * (shadowCtrl ? shadowCtrl.SpeedMultiplier : 1f);
+
+        Vector3 move = dir * (speed * Time.deltaTime);
+
+        if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+        {
+            // 이동 후 위치가 그림자가 아니면 이동 취소(간단 버전)
+            Vector3 next = transform.position + move;
+            if (!shadowCtrl.IsShadowAtWorldPos(next))
+                move = Vector3.zero;
+        }
+
+        cc.Move(move);
 
         // isRun: 입력(또는 dir)로 한 번만 결정
         bool isRun = dir.sqrMagnitude > 0.0001f;
