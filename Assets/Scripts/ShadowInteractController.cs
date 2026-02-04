@@ -103,4 +103,37 @@ public class ShadowInteractController : MonoBehaviour
         }
         return false;
     }
+
+    public bool IsShadowSafeAtWorldPos(Vector3 worldPos, float margin)
+    {
+        // 바닥점 얻기
+        Vector3 origin = worldPos + Vector3.up * 2f;
+        if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, groundMask, QueryTriggerInteraction.Ignore))
+            return false;
+
+        Vector3 p = hit.point;
+        Vector3 n = hit.normal;
+
+        // 중심 1점 + 주변 4점(십자)도 모두 그림자면 "안전"
+        // (원하면 8방향으로 늘려도 됨)
+        Vector3[] offsets =
+        {
+        Vector3.zero,
+        new Vector3( margin, 0, 0),
+        new Vector3(-margin, 0, 0),
+        new Vector3(0, 0,  margin),
+        new Vector3(0, 0, -margin),
+    };
+
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            Vector3 test = p + offsets[i];
+            // 같은 높이/법선으로 판정 (Plane이면 충분히 잘 맞음)
+            bool inShadow = ShadowQueryDirectional.IsInShadow(test, n, sun, occluderMask, maxDistance: maxDirDistance);
+            if (!inShadow) return false;
+        }
+
+        return true;
+    }
+
 }
