@@ -1,35 +1,36 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class ShadowInteractController : MonoBehaviour
 {
     [Header("Masks")]
-    public LayerMask groundMask;     // Plane/ÁöÇü ·¹ÀÌ¾î
-    public LayerMask occluderMask;   // ±×¸²ÀÚ ¸¸µå´Â ¹°Ã¼ ·¹ÀÌ¾î(Å¥ºê/º®)
+    public LayerMask groundMask;     // Plane/ì§€í˜• ë ˆì´ì–´
+    public LayerMask occluderMask;   // ê·¸ë¦¼ì ë§Œë“œëŠ” ë¬¼ì²´ ë ˆì´ì–´(íë¸Œ/ë²½)
 
     [Header("Directional Light")]
     public Light sun;
 
     [Header("Indicator")]
-    public GameObject shadowIndicator; // ¹ß¹Ø Ç¥½Ã
+    public GameObject shadowIndicator; // ë°œë°‘ í‘œì‹œ
 
     [Header("Shadow Mode")]
-    public Transform visualRoot;        // ½ºÄÌ·¹Å»(ºñÁÖ¾ó) ·çÆ® ¿¬°á!
-    public float sinkVisualY = -0.35f;  // ¡°¶¥¿¡ ¹ÚÈ÷´Â¡± ¿¬Ãâ(ºñÁÖ¾ó¸¸)
+    public Transform visualRoot;        // ìŠ¤ì¼ˆë ˆíƒˆ(ë¹„ì£¼ì–¼) ë£¨íŠ¸ ì—°ê²°!
+    public float sinkVisualY = -0.35f;  // â€œë•…ì— ë°•íˆëŠ”â€ ì—°ì¶œ(ë¹„ì£¼ì–¼ë§Œ)
     public float shadowSpeedMul = 0.6f;
-    public float maxShadowTime = 5f;
     public float maxDirDistance = 80f;
 
+    [Header("Shadow Gauge (Dev)")]
+    public float drainFullSeconds = 5f;   // âœ… ê²Œì´ì§€ê°€ 1â†’0 ë˜ëŠ” ì‹œê°„(ì´ˆê¸° 5ì´ˆ)
+    public float regenFullSeconds = 10f;  // âœ… ê²Œì´ì§€ê°€ 0â†’1 ë˜ëŠ” ì‹œê°„(ì´ˆê¸° 10ì´ˆ)
+    [Range(0f, 1f)] public float gauge01 = 1f; // í˜„ì¬ ê²Œì´ì§€(0~1)
+
     [Header("Input")]
-    public int mouseButton = 1; // ¿ìÅ¬¸¯ = 1
+    public int mouseButton = 1; // ìš°í´ë¦­ = 1
 
     bool inShadowMode;
-    float timeLeft;
-
     Vector3 visualOriginalLocalPos;
 
     void Awake()
     {
-        timeLeft = maxShadowTime;
         if (shadowIndicator) shadowIndicator.SetActive(false);
 
         if (visualRoot != null)
@@ -43,41 +44,59 @@ public class ShadowInteractController : MonoBehaviour
 
         bool onShadow = ShadowQueryDirectional.IsInShadow(gp, gn, sun, occluderMask, maxDistance: maxDirDistance);
 
-        // ±×¸²ÀÚ À§¿¡ ¼­¸é Ç¥½Ã(±×¸²ÀÚ ¸ğµå°¡ ¾Æ´Ò ¶§¸¸)
+        // ê·¸ë¦¼ì ìœ„ì— ì„œë©´ í‘œì‹œ(ê·¸ë¦¼ì ëª¨ë“œê°€ ì•„ë‹ ë•Œë§Œ)
         if (shadowIndicator && !inShadowMode)
             shadowIndicator.SetActive(onShadow);
 
-        // ¿ìÅ¬¸¯ Åä±Û: ±×¸²ÀÚ À§¿¡¼­¸¸
-        if (Input.GetMouseButtonDown(mouseButton) && onShadow)
-        {
-            if (!inShadowMode) EnterShadowMode();
-            else ExitShadowMode();
-        }
-
-        // ±×¸²ÀÚ ¸ğµå À¯Áö/ÀÚµ¿ Á¾·á
+        // âœ… ê²Œì´ì§€ ì—…ë°ì´íŠ¸
         if (inShadowMode)
         {
-            timeLeft -= Time.deltaTime;
+            gauge01 -= Time.deltaTime / Mathf.Max(0.01f, drainFullSeconds);
+            if (gauge01 <= 0f)
+            {
+                gauge01 = 0f;
+                ExitShadowMode(); // ê²Œì´ì§€ 0ì´ë©´ ìë™ìœ¼ë¡œ ë‚˜ì˜´
+            }
 
-            // ºûÀ¸·Î ³ª°¡°Å³ª ½Ã°£ÀÌ ³¡³ª¸é ÀÚµ¿À¸·Î ³ª¿È
-            if (!onShadow || timeLeft <= 0f)
+            // (ê¸°ì¡´ ê·œì¹™ ìœ ì§€) ê·¸ë¦¼ì ë°–ìœ¼ë¡œ ë‚˜ì˜¤ë©´ ìë™ìœ¼ë¡œ ë‚˜ì˜´
+            if (!onShadow)
                 ExitShadowMode();
+        }
+        else
+        {
+            gauge01 += Time.deltaTime / Mathf.Max(0.01f, regenFullSeconds);
+            if (gauge01 > 1f) gauge01 = 1f;
+        }
+
+        // âœ… ìš°í´ë¦­ í† ê¸€: ê·¸ë¦¼ì ìœ„ì—ì„œë§Œ
+        // - ë“¤ì–´ê°ˆ ë•Œ: ê²Œì´ì§€ê°€ 0ì´ë©´ ì§„ì… ë¶ˆê°€
+        if (Input.GetMouseButtonDown(mouseButton) && onShadow)
+        {
+            if (!inShadowMode)
+            {
+                if (gauge01 > 0f) EnterShadowMode();
+            }
+            else
+            {
+                ExitShadowMode();
+            }
         }
     }
 
     public bool IsInShadowMode => inShadowMode;
     public float SpeedMultiplier => inShadowMode ? shadowSpeedMul : 1f;
-    public float TimeLeft01 => Mathf.Clamp01(timeLeft / maxShadowTime);
+
+    // UIì—ì„œ ë°”ë¡œ ì“°ê¸° ì¢‹ê²Œ (0~1)
+    public float Gauge01 => gauge01;
 
     void EnterShadowMode()
     {
         inShadowMode = true;
-        timeLeft = maxShadowTime;
 
         if (visualRoot != null)
         {
             var p = visualOriginalLocalPos;
-            p.y += sinkVisualY; // ºñÁÖ¾ó¸¸ ³»¸²
+            p.y += sinkVisualY; // ë¹„ì£¼ì–¼ë§Œ ë‚´ë¦¼
             visualRoot.localPosition = p;
         }
 
@@ -92,10 +111,10 @@ public class ShadowInteractController : MonoBehaviour
             visualRoot.localPosition = visualOriginalLocalPos;
     }
 
-    // (¿É¼Ç) Æ¯Á¤ ¿ùµå À§Ä¡°¡ ±×¸²ÀÚÀÎÁö ´Ù¸¥ ½ºÅ©¸³Æ®¿¡¼­ ¾²°í ½ÍÀ» ¶§
+    // (ì˜µì…˜) íŠ¹ì • ì›”ë“œ ìœ„ì¹˜ê°€ ê·¸ë¦¼ìì¸ì§€ ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ ì“°ê³  ì‹¶ì„ ë•Œ
     public bool IsShadowAtWorldPos(Vector3 worldPos)
     {
-        // worldPos¿¡¼­ ¹Ù´ÚÁ¡À» ´Ù½Ã ±¸ÇØ¼­ ÆÇÁ¤
+        // worldPosì—ì„œ ë°”ë‹¥ì ì„ ë‹¤ì‹œ êµ¬í•´ì„œ íŒì •
         Vector3 origin = worldPos + Vector3.up * 2f;
         if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, groundMask, QueryTriggerInteraction.Ignore))
         {
@@ -106,7 +125,7 @@ public class ShadowInteractController : MonoBehaviour
 
     public bool IsShadowSafeAtWorldPos(Vector3 worldPos, float margin)
     {
-        // ¹Ù´ÚÁ¡ ¾ò±â
+        // ë°”ë‹¥ì  ì–»ê¸°
         Vector3 origin = worldPos + Vector3.up * 2f;
         if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, groundMask, QueryTriggerInteraction.Ignore))
             return false;
@@ -114,21 +133,19 @@ public class ShadowInteractController : MonoBehaviour
         Vector3 p = hit.point;
         Vector3 n = hit.normal;
 
-        // Áß½É 1Á¡ + ÁÖº¯ 4Á¡(½ÊÀÚ)µµ ¸ğµÎ ±×¸²ÀÚ¸é "¾ÈÀü"
-        // (¿øÇÏ¸é 8¹æÇâÀ¸·Î ´Ã·Áµµ µÊ)
+        // ì¤‘ì‹¬ 1ì  + ì£¼ë³€ 4ì (ì‹­ì)ë„ ëª¨ë‘ ê·¸ë¦¼ìë©´ "ì•ˆì „"
         Vector3[] offsets =
         {
-        Vector3.zero,
-        new Vector3( margin, 0, 0),
-        new Vector3(-margin, 0, 0),
-        new Vector3(0, 0,  margin),
-        new Vector3(0, 0, -margin),
-    };
+            Vector3.zero,
+            new Vector3( margin, 0, 0),
+            new Vector3(-margin, 0, 0),
+            new Vector3(0, 0,  margin),
+            new Vector3(0, 0, -margin),
+        };
 
         for (int i = 0; i < offsets.Length; i++)
         {
             Vector3 test = p + offsets[i];
-            // °°Àº ³ôÀÌ/¹ı¼±À¸·Î ÆÇÁ¤ (PlaneÀÌ¸é ÃæºĞÈ÷ Àß ¸ÂÀ½)
             bool inShadow = ShadowQueryDirectional.IsInShadow(test, n, sun, occluderMask, maxDistance: maxDirDistance);
             if (!inShadow) return false;
         }
