@@ -1408,7 +1408,7 @@ Transform:
   m_GameObject: {fileID: 1206722590}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -3.38}
+  m_LocalPosition: {x: 0, y: 0, z: -5.44}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1439,7 +1439,7 @@ MonoBehaviour:
   sinkVisualY: -2.5
   shadowSpeedMul: 0.6
   maxDirDistance: 80
-  drainFullSeconds: 5
+  drainFullSeconds: 10
   regenFullSeconds: 10
   gauge01: 1
   mouseButton: 1
@@ -1906,6 +1906,7 @@ GameObject:
   - component: {fileID: 2037143130}
   - component: {fileID: 2037143129}
   - component: {fileID: 2037143128}
+  - component: {fileID: 2037143132}
   m_Layer: 7
   m_Name: MovingObject
   m_TagString: Untagged
@@ -2001,12 +2002,30 @@ Transform:
   m_GameObject: {fileID: 2037143127}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.61477, y: 1.89, z: 2.47806}
+  m_LocalPosition: {x: -2.62, y: 1.89, z: -0}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2037143132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2037143127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66b46e509fcbf2c429e007e28e1bbb1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TestMovingObject
+  pointA: {x: 0, y: 0, z: 0}
+  pointB: {x: 6, y: 0, z: 0}
+  useLocalOffsets: 1
+  speed: 2
+  waitAtEnds: 0
+  faceMoveDirection: 1
 --- !u!1 &2054788635
 GameObject:
   m_ObjectHideFlags: 0
