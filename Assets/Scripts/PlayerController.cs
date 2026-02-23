@@ -52,15 +52,24 @@ public class PlayerController : MonoBehaviour
 
         Vector3 move = dir * (speed * Time.deltaTime);
 
-        if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+        /*if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
         {
             // 이동 후 위치가 그림자가 아니면 이동 취소(간단 버전)
             Vector3 next = transform.position + move;
             if (!shadowCtrl.IsShadowAtWorldPos(next))
                 move = Vector3.zero;
-        }
+        }*/
 
         cc.Move(move);
+
+        if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+        {
+            float margin = cc != null ? cc.radius * 0.9f : 0.35f;
+
+            // 현재 위치가 더 이상 안전 그림자가 아니면 즉시 튕겨나오기
+            if (!shadowCtrl.IsShadowSafeAtWorldPos(transform.position, margin))
+                shadowCtrl.ForceExitShadowMode();
+        }
 
         // isRun: 입력(또는 dir)로 한 번만 결정
         bool isRun = dir.sqrMagnitude > 0.0001f;

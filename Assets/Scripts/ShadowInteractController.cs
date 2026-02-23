@@ -153,4 +153,10 @@ public class ShadowInteractController : MonoBehaviour
         return true;
     }
 
+    public void ForceExitShadowMode()
+    {
+        if (inShadowMode)
+            ExitShadowMode();
+    }
+
 }
