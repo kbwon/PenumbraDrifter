@@ -95,6 +95,12 @@ public class PlayerController : MonoBehaviour
                 ApplyFlip(faceRight);
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            GetComponent<PlayerHealth>().TakeDamage(1);
+        }
+
     }
 
     void ApplyFlip(bool faceRight)
