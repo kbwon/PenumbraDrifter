@@ -29,6 +29,10 @@ public class ShadowInteractController : MonoBehaviour
     bool inShadowMode;
     Vector3 visualOriginalLocalPos;
 
+    public bool hasSurfaceAnchor { get; private set; }
+    Vector3 anchorNormal;
+    Collider anchorCollider;
+
     void Awake()
     {
         if (shadowIndicator) shadowIndicator.SetActive(false);
@@ -109,6 +113,7 @@ public class ShadowInteractController : MonoBehaviour
 
         if (visualRoot != null)
             visualRoot.localPosition = visualOriginalLocalPos;
+        ClearSurfaceAnchor();
     }
 
     // (옵션) 특정 월드 위치가 그림자인지 다른 스크립트에서 쓰고 싶을 때
@@ -159,4 +164,34 @@ public class ShadowInteractController : MonoBehaviour
             ExitShadowMode();
     }
 
+    public void SetSurfaceAnchor(Vector3 normal, Collider col)
+    {
+        hasSurfaceAnchor = true;
+        anchorNormal = normal.normalized;
+        anchorCollider = col;
+    }
+
+    public void ClearSurfaceAnchor()
+    {
+        hasSurfaceAnchor = false;
+        anchorCollider = null;
+    }
+
+    public void SnapToAnchoredSurface(Transform actor, float snapDistance = 2f)
+    {
+        if (!hasSurfaceAnchor || anchorCollider == null) return;
+
+        // 표면 바깥쪽에서 표면 안쪽으로 레이
+        Vector3 origin = actor.position + anchorNormal * 1.0f;
+        Vector3 dir = -anchorNormal;
+
+        if (Physics.Raycast(origin, dir, out RaycastHit hit, snapDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            // 같은 콜라이더에 붙도록(정확도↑)
+            if (hit.collider != anchorCollider) return;
+
+            // 벽/천장일 경우: 살짝 바깥으로 띄워서 “붙어있게”
+            actor.position = hit.point + anchorNormal * 0.05f;
+        }
+    }
 }

@@ -1,26 +1,27 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 public class ShadowTeleport : MonoBehaviour
 {
     [Header("Refs")]
-    public ShadowInteractController shadowCtrl; // °°Àº ÇÃ·¹ÀÌ¾î¿¡ ºÙÀº ShadowInteractController
-    public Camera cam;                          // ºñ¿ì¸é Camera.main
+    public ShadowInteractController shadowCtrl; // ê°™ì€ í”Œë ˆì´ì–´ì— ë¶™ì€ ShadowInteractController
+    public Camera cam;                          // ë¹„ìš°ë©´ Camera.main
 
     [Header("Raycast")]
-    public LayerMask groundMask;                // Plane/ÁöÇü¸¸ Æ÷ÇÔ (Å¥ºê/º®Àº Á¦¿ÜÇØ¾ß ¹Ù´ÚÀ» ÂïÀ½)
+    public LayerMask groundMask;                // Plane/ì§€í˜•ë§Œ í¬í•¨ (íë¸Œ/ë²½ì€ ì œì™¸í•´ì•¼ ë°”ë‹¥ì„ ì°ìŒ)
+    public LayerMask surfaceMask;
     public float rayMaxDistance = 200f;
 
     [Header("Teleport")]
-    public float cooldownSeconds = 10f;         // ÃÊ±â 10ÃÊ
-    public float maxTeleportDistance = 0f;      // 0ÀÌ¸é °Å¸® Á¦ÇÑ ¾øÀ½(ÃßÈÄ È®Àå¿ë)
-    public float yLift = 0.02f;                 // ¹Ù´Ú¿¡¼­ »ìÂ¦ ¶ç¿ì±â(ÆÄ°íµê ¹æÁö)
+    public float cooldownSeconds = 10f;         // ì´ˆê¸° 10ì´ˆ
+    public float maxTeleportDistance = 0f;      // 0ì´ë©´ ê±°ë¦¬ ì œí•œ ì—†ìŒ(ì¶”í›„ í™•ì¥ìš©)
+    public float yLift = 0.02f;                 // ë°”ë‹¥ì—ì„œ ì‚´ì§ ë„ìš°ê¸°(íŒŒê³ ë“¦ ë°©ì§€)
 
     float cooldownLeft;
     CharacterController cc;
 
     public bool IsReady => cooldownLeft <= 0f;
-    public float Cooldown01 => Mathf.Clamp01(cooldownLeft / Mathf.Max(0.01f, cooldownSeconds)); // UI¿ë
+    public float Cooldown01 => Mathf.Clamp01(cooldownLeft / Mathf.Max(0.01f, cooldownSeconds)); // UIìš©
 
     void Awake()
     {
@@ -31,35 +32,35 @@ public class ShadowTeleport : MonoBehaviour
 
     void Update()
     {
-        // Äğ´Ù¿î °¨¼Ò
+        // ì¿¨ë‹¤ìš´ ê°ì†Œ
         if (cooldownLeft > 0f)
             cooldownLeft = Mathf.Max(0f, cooldownLeft - Time.deltaTime);
 
         if (!shadowCtrl || !cam) return;
 
-        // ±×¸²ÀÚ ¼Ó(ShadowMode)ÀÏ ¶§¸¸ »ç¿ë
+        // ê·¸ë¦¼ì ì†(ShadowMode)ì¼ ë•Œë§Œ ì‚¬ìš©
         if (!shadowCtrl.IsInShadowMode) return;
 
-        // ÁÂÅ¬¸¯(0)
+        // ì¢Œí´ë¦­(0)
         if (!Input.GetMouseButtonDown(0)) return;
 
-        // ÄğÅ¸ÀÓ Ã¼Å©
+        // ì¿¨íƒ€ì„ ì²´í¬
         if (!IsReady) return;
 
-        // °ÔÀÌÁö 0ÀÌ¸é ¸ø ¾²°Ô(¿øÇÏ¸é Á¶°Ç Á¦°Å °¡´É)
+        // ê²Œì´ì§€ 0ì´ë©´ ëª» ì“°ê²Œ(ì›í•˜ë©´ ì¡°ê±´ ì œê±° ê°€ëŠ¥)
         if (shadowCtrl.Gauge01 <= 0f) return;
 
-        // È­¸é Å¬¸¯ ÁöÁ¡ -> ¹Ù´Ú ·¹ÀÌÄ³½ºÆ®
+        // í™”ë©´ í´ë¦­ ì§€ì  -> ë°”ë‹¥ ë ˆì´ìºìŠ¤íŠ¸
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        if (!Physics.Raycast(ray, out RaycastHit hit, rayMaxDistance, groundMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(ray, out RaycastHit hit, rayMaxDistance, surfaceMask, QueryTriggerInteraction.Ignore))
             return;
 
-        // ¸ñÀûÁö°¡ "¾ÈÀü ±×¸²ÀÚ"ÀÎÁö °Ë»ç(°æ°è °ÉÄ§ ¹æÁö Æ÷ÇÔ)
+        // ëª©ì ì§€ê°€ "ì•ˆì „ ê·¸ë¦¼ì"ì¸ì§€ ê²€ì‚¬(ê²½ê³„ ê±¸ì¹¨ ë°©ì§€ í¬í•¨)
         float margin = (cc != null) ? cc.radius * 0.9f : 0.35f;
         if (!shadowCtrl.IsShadowSafeAtWorldPos(hit.point, margin))
             return;
 
-        // (ÃßÈÄ È®Àå) °Å¸® Á¦ÇÑ
+        // (ì¶”í›„ í™•ì¥) ê±°ë¦¬ ì œí•œ
         if (maxTeleportDistance > 0f)
         {
             Vector3 a = transform.position; a.y = 0;
@@ -67,10 +68,10 @@ public class ShadowTeleport : MonoBehaviour
             if (Vector3.Distance(a, b) > maxTeleportDistance) return;
         }
 
-        // ¼ø°£ÀÌµ¿ ½ÇÇà
+        // ìˆœê°„ì´ë™ ì‹¤í–‰
         TeleportToGroundPoint(hit.point);
 
-        // Äğ´Ù¿î ½ÃÀÛ
+        // ì¿¨ë‹¤ìš´ ì‹œì‘
         cooldownLeft = cooldownSeconds;
     }
 
@@ -80,15 +81,59 @@ public class ShadowTeleport : MonoBehaviour
         newPos.x = groundPoint.x;
         newPos.z = groundPoint.z;
 
-        // CharacterController¸¦ ¹Ù´Ú¿¡ Á¤È®È÷ ¿Ã¸®±â
+        // CharacterControllerë¥¼ ë°”ë‹¥ì— ì •í™•íˆ ì˜¬ë¦¬ê¸°
         // bottom = pos.y + center.y - height/2  => bottom == groundY
         float groundY = groundPoint.y;
         float desiredY = groundY + (cc.height * 0.5f - cc.center.y) + yLift;
         newPos.y = desiredY;
 
-        // CC°¡ Äİ¶óÀÌ´õ¿Í °ãÄ¡¸é ÀÌµ¿ÀÌ ²¿ÀÏ ¼ö ÀÖÀ¸´Ï Àá±ñ ²°´Ù°¡ À§Ä¡ ÁöÁ¤
+        // CCê°€ ì½œë¼ì´ë”ì™€ ê²¹ì¹˜ë©´ ì´ë™ì´ ê¼¬ì¼ ìˆ˜ ìˆìœ¼ë‹ˆ ì ê¹ ê»ë‹¤ê°€ ìœ„ì¹˜ ì§€ì •
         cc.enabled = false;
         transform.position = newPos;
         cc.enabled = true;
+    }
+
+    void TeleportToSurface(RaycastHit hit)
+    {
+        Vector3 p = hit.point;
+        Vector3 n = hit.normal.normalized;
+
+        Vector3 newPos = transform.position;
+
+        // ê³µí†µ: XZëŠ” ì°ì€ ì§€ì  ê¸°ì¤€ìœ¼ë¡œ
+        newPos.x = p.x;
+        newPos.z = p.z;
+
+        // CharacterController ê¸°ì¤€ ê°’
+        float halfH = cc.height * 0.5f;
+        float centerY = cc.center.y;
+
+        // 1) ë°”ë‹¥(ìœ„ìª½ ë…¸ë§): bottomì„ ë°”ë‹¥ì— ë§ì¶¤
+        if (n.y > 0.7f)
+        {
+            newPos.y = p.y + (halfH - centerY) + yLift;
+        }
+        // 2) ì²œì¥(ì•„ë˜ìª½ ë…¸ë§): topì„ ì²œì¥ì— ë§ì¶¤
+        else if (n.y < -0.7f)
+        {
+            // top = pos.y + centerY + halfH  => top == ceilingY
+            newPos.y = p.y - (centerY + halfH) - yLift;
+        }
+        // 3) ë²½(ìˆ˜í‰ ë…¸ë§): â€œë²½ì— ë‹¬ë¼ë¶™ëŠ”â€ ì—°ì¶œìš©
+        else
+        {
+            // YëŠ” í´ë¦­ ì§€ì  ë†’ì´ ê¸°ì¤€ìœ¼ë¡œ feet(ë°”ë‹¥)ë¥¼ ë§ì¶°ì¤Œ(ë²½ì„ ë°Ÿê³  ìˆëŠ” ëŠë‚Œì„ ë§ì¶”ê¸° ì‰¬ì›€)
+            newPos.y = p.y + (halfH - centerY);
+
+            // ë²½ í‰ë©´ ì•ˆìœ¼ë¡œ íŒŒê³ ë“¤ì§€ ì•Šê²Œ, ë²•ì„  ë°©í–¥ìœ¼ë¡œ ì‚´ì§ ë°€ì–´ëƒ„(ìº¡ìŠ ë°˜ì§€ë¦„ë§Œí¼)
+            newPos += n * (cc.radius + 0.02f);
+        }
+
+        cc.enabled = false;
+        transform.position = newPos;
+        cc.enabled = true;
+
+        // âœ… ì´ í‘œë©´ì— ë¶™ì–´ìˆë‹¤ëŠ” ì •ë³´(ì•µì»¤)ë¥¼ ShadowInteractControllerì— ë„˜ê²¨ì¤Œ
+        shadowCtrl.SetSurfaceAnchor(n, hit.collider);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,6 +13,10 @@ public class PlayerController : MonoBehaviour
     public bool artFacesRight = true;     // 아트의 기본 정면이 오른쪽이면 true, 왼쪽이면 false
 
     private CharacterController cc;
+
+
+    public float gravity = -25f;
+    float verticalVel;
 
     void Awake()
     {
@@ -50,17 +55,27 @@ public class PlayerController : MonoBehaviour
         var shadowCtrl = GetComponent<ShadowInteractController>();
         float speed = moveSpeed * (shadowCtrl ? shadowCtrl.SpeedMultiplier : 1f);
 
-        Vector3 move = dir * (speed * Time.deltaTime);
+        bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
 
-        /*if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+        Vector3 horizontalMove = dir * (speed * Time.deltaTime);
+
+        if (inShadow)
         {
-            // 이동 후 위치가 그림자가 아니면 이동 취소(간단 버전)
-            Vector3 next = transform.position + move;
-            if (!shadowCtrl.IsShadowAtWorldPos(next))
-                move = Vector3.zero;
-        }*/
+            verticalVel = 0f;
+        }
+        else
+        {
+            if (cc.isGrounded && verticalVel < 0f) verticalVel = -2f;
+            verticalVel += gravity * Time.deltaTime;
+        }
 
+        Vector3 move = horizontalMove + Vector3.up * (verticalVel * Time.deltaTime);
         cc.Move(move);
+
+        if (shadowCtrl != null && shadowCtrl.IsInShadowMode && shadowCtrl.hasSurfaceAnchor)
+        {
+            shadowCtrl.SnapToAnchoredSurface(transform);
+        }
 
         if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
         {
