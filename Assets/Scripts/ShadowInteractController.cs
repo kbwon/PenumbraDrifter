@@ -3,8 +3,9 @@
 public class ShadowInteractController : MonoBehaviour
 {
     [Header("Masks")]
-    public LayerMask groundMask;     // Plane/지형 레이어
+    public LayerMask groundMask;     // (유지) 기존 사용 가능
     public LayerMask occluderMask;   // 그림자 만드는 물체 레이어(큐브/벽)
+    public LayerMask surfaceMask;    // ✅ "서 있을 수 있는 표면" (Ground + Occluder + Platform 등)
 
     [Header("Directional Light")]
     public Light sun;
@@ -19,9 +20,9 @@ public class ShadowInteractController : MonoBehaviour
     public float maxDirDistance = 80f;
 
     [Header("Shadow Gauge (Dev)")]
-    public float drainFullSeconds = 5f;   // ✅ 게이지가 1→0 되는 시간(초기 5초)
-    public float regenFullSeconds = 10f;  // ✅ 게이지가 0→1 되는 시간(초기 10초)
-    [Range(0f, 1f)] public float gauge01 = 1f; // 현재 게이지(0~1)
+    public float drainFullSeconds = 5f;
+    public float regenFullSeconds = 10f;
+    [Range(0f, 1f)] public float gauge01 = 1f;
 
     [Header("Input")]
     public int mouseButton = 1; // 우클릭 = 1
@@ -33,17 +34,29 @@ public class ShadowInteractController : MonoBehaviour
     Vector3 anchorNormal;
     Collider anchorCollider;
 
+    // ✅ PlayerController에서 읽을 수 있게 공개
+    public Vector3 AnchorNormal => anchorNormal;
+
+    // ✅ 벽 겹침이 심하면 이 값을 조금 키우세요 (0.05~0.15 추천)
+    [Header("Anchor Visual Offset")]
+    public float anchorSurfaceOffset = 0.08f;
+
     void Awake()
     {
         if (shadowIndicator) shadowIndicator.SetActive(false);
 
         if (visualRoot != null)
             visualOriginalLocalPos = visualRoot.localPosition;
+
+        // surfaceMask가 비어있으면(세팅 안 했으면) 기존 groundMask로 폴백
+        if (surfaceMask.value == 0)
+            surfaceMask = groundMask;
     }
 
     void Update()
     {
-        if (!GroundUtil.GetGroundPoint(transform, groundMask, out var gp, out var gn))
+        // ✅ [핵심] 현재 표면 포인트를 surfaceMask/앵커 기반으로 얻는다
+        if (!TryGetCurrentSurfacePoint(out var gp, out var gn))
             return;
 
         bool onShadow = ShadowQueryDirectional.IsInShadow(gp, gn, sun, occluderMask, maxDistance: maxDirDistance);
@@ -56,6 +69,8 @@ public class ShadowInteractController : MonoBehaviour
         if (inShadowMode)
         {
             gauge01 -= Time.deltaTime / Mathf.Max(0.01f, drainFullSeconds);
+            gauge01 = Mathf.Clamp01(gauge01);
+
             if (gauge01 <= 0f)
             {
                 gauge01 = 0f;
@@ -69,11 +84,10 @@ public class ShadowInteractController : MonoBehaviour
         else
         {
             gauge01 += Time.deltaTime / Mathf.Max(0.01f, regenFullSeconds);
-            if (gauge01 > 1f) gauge01 = 1f;
+            gauge01 = Mathf.Clamp01(gauge01);
         }
 
         // ✅ 우클릭 토글: 그림자 위에서만
-        // - 들어갈 때: 게이지가 0이면 진입 불가
         if (Input.GetMouseButtonDown(mouseButton) && onShadow)
         {
             if (!inShadowMode)
@@ -89,8 +103,6 @@ public class ShadowInteractController : MonoBehaviour
 
     public bool IsInShadowMode => inShadowMode;
     public float SpeedMultiplier => inShadowMode ? shadowSpeedMul : 1f;
-
-    // UI에서 바로 쓰기 좋게 (0~1)
     public float Gauge01 => gauge01;
 
     void EnterShadowMode()
@@ -113,39 +125,115 @@ public class ShadowInteractController : MonoBehaviour
 
         if (visualRoot != null)
             visualRoot.localPosition = visualOriginalLocalPos;
+
         ClearSurfaceAnchor();
     }
 
-    // (옵션) 특정 월드 위치가 그림자인지 다른 스크립트에서 쓰고 싶을 때
+    // =========================
+    // ✅ 표면 포인트/노말 얻기
+    // =========================
+    bool TryGetCurrentSurfacePoint(out Vector3 point, out Vector3 normal)
+    {
+        // 1) 앵커가 있으면: 앵커 방향으로 표면 샘플 (벽/천장/플랫폼 대응)
+        if (hasSurfaceAnchor && anchorCollider != null)
+        {
+            Vector3 origin = transform.position + anchorNormal * 1.0f;
+            Vector3 dir = -anchorNormal;
+
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, 2.5f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider == anchorCollider)
+                {
+                    point = hit.point;
+                    normal = hit.normal;
+                    return true;
+                }
+            }
+
+            // 앵커가 끊겼으면 해제
+            ClearSurfaceAnchor();
+        }
+
+        // 2) 일반: 위에서 아래로 표면 찾기 (✅ surfaceMask 사용)
+        Vector3 originDown = transform.position + Vector3.up * 2f;
+        if (Physics.Raycast(originDown, Vector3.down, out RaycastHit hitDown, 10f, surfaceMask, QueryTriggerInteraction.Ignore))
+        {
+            point = hitDown.point;
+            normal = hitDown.normal;
+            return true;
+        }
+
+        point = default;
+        normal = Vector3.up;
+        return false;
+    }
+
+    // =========================
+    // (옵션) 그림자 판정 API
+    // =========================
     public bool IsShadowAtWorldPos(Vector3 worldPos)
     {
-        // worldPos에서 바닥점을 다시 구해서 판정
         Vector3 origin = worldPos + Vector3.up * 2f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, groundMask, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, surfaceMask, QueryTriggerInteraction.Ignore))
         {
             return ShadowQueryDirectional.IsInShadow(hit.point, hit.normal, sun, occluderMask, maxDistance: maxDirDistance);
         }
         return false;
     }
 
+    public bool IsShadowAtPoint(Vector3 p, Vector3 n)
+    {
+        return ShadowQueryDirectional.IsInShadow(p, n, sun, occluderMask, maxDistance: maxDirDistance);
+    }
+
+    // =========================
+    // ✅ "안전 그림자" 판정(벽/천장 포함)
+    // - 앵커가 있으면 앵커 표면에서 검사
+    // - margin 오프셋은 표면 tangent(좌/우 + 상/하) 기준
+    // =========================
     public bool IsShadowSafeAtWorldPos(Vector3 worldPos, float margin)
     {
-        // 바닥점 얻기
-        Vector3 origin = worldPos + Vector3.up * 2f;
-        if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 10f, groundMask, QueryTriggerInteraction.Ignore))
+        // 1) 앵커가 있으면 앵커 표면에서 검사
+        if (hasSurfaceAnchor && anchorCollider != null)
+        {
+            Vector3 origin = worldPos + anchorNormal * 1.0f;
+            Vector3 dir = -anchorNormal;
+
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, 2.5f, ~0, QueryTriggerInteraction.Ignore)
+                && hit.collider == anchorCollider)
+            {
+                return IsShadowSafeAtPoint(hit.point, hit.normal, margin);
+            }
+        }
+
+        // 2) 일반: 아래로 표면 찾기
+        Vector3 originDown = worldPos + Vector3.up * 2f;
+        if (!Physics.Raycast(originDown, Vector3.down, out RaycastHit hitDown, 10f, surfaceMask, QueryTriggerInteraction.Ignore))
             return false;
 
-        Vector3 p = hit.point;
-        Vector3 n = hit.normal;
+        return IsShadowSafeAtPoint(hitDown.point, hitDown.normal, margin);
+    }
 
-        // 중심 1점 + 주변 4점(십자)도 모두 그림자면 "안전"
+    static void BuildTangents(Vector3 n, out Vector3 t1, out Vector3 t2)
+    {
+        // n과 평행하지 않은 축 선택
+        Vector3 a = (Mathf.Abs(Vector3.Dot(n, Vector3.up)) > 0.95f) ? Vector3.right : Vector3.up;
+        t1 = Vector3.Cross(n, a).normalized;
+        t2 = Vector3.Cross(n, t1).normalized;
+    }
+
+    public bool IsShadowSafeAtPoint(Vector3 p, Vector3 n, float margin)
+    {
+        n = n.normalized;
+        BuildTangents(n, out var t1, out var t2);
+
         Vector3[] offsets =
         {
             Vector3.zero,
-            new Vector3( margin, 0, 0),
-            new Vector3(-margin, 0, 0),
-            new Vector3(0, 0,  margin),
-            new Vector3(0, 0, -margin),
+            t1 * margin,
+            -t1 * margin,
+            t2 * margin,
+            -t2 * margin,
         };
 
         for (int i = 0; i < offsets.Length; i++)
@@ -164,6 +252,9 @@ public class ShadowInteractController : MonoBehaviour
             ExitShadowMode();
     }
 
+    // =========================
+    // 앵커(벽/천장/플랫폼 붙기)
+    // =========================
     public void SetSurfaceAnchor(Vector3 normal, Collider col)
     {
         hasSurfaceAnchor = true;
@@ -177,21 +268,21 @@ public class ShadowInteractController : MonoBehaviour
         anchorCollider = null;
     }
 
+    // ✅ 벽 겹침/떨어짐 보정: 붙어있는 표면으로 계속 스냅
     public void SnapToAnchoredSurface(Transform actor, float snapDistance = 2f)
     {
         if (!hasSurfaceAnchor || anchorCollider == null) return;
 
-        // 표면 바깥쪽에서 표면 안쪽으로 레이
         Vector3 origin = actor.position + anchorNormal * 1.0f;
         Vector3 dir = -anchorNormal;
 
         if (Physics.Raycast(origin, dir, out RaycastHit hit, snapDistance, ~0, QueryTriggerInteraction.Ignore))
         {
-            // 같은 콜라이더에 붙도록(정확도↑)
             if (hit.collider != anchorCollider) return;
 
-            // 벽/천장일 경우: 살짝 바깥으로 띄워서 “붙어있게”
-            actor.position = hit.point + anchorNormal * 0.05f;
+            // 살짝 바깥으로 띄워서 겹침 완화
+            actor.position = hit.point + anchorNormal * anchorSurfaceOffset;
         }
     }
+
 }

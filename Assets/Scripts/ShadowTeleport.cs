@@ -8,8 +8,8 @@ public class ShadowTeleport : MonoBehaviour
     public Camera cam;                          // 비우면 Camera.main
 
     [Header("Raycast")]
-    public LayerMask groundMask;                // Plane/지형만 포함 (큐브/벽은 제외해야 바닥을 찍음)
-    public LayerMask surfaceMask;
+    public LayerMask groundMask;                // (기존) 사용 안 해도 됨. 필요하면 유지
+    public LayerMask surfaceMask;               // ✅ 클릭 가능한 표면(바닥/기둥/벽/천장/플랫폼 등 포함)
     public float rayMaxDistance = 200f;
 
     [Header("Teleport")]
@@ -28,6 +28,10 @@ public class ShadowTeleport : MonoBehaviour
         cc = GetComponent<CharacterController>();
         if (!shadowCtrl) shadowCtrl = GetComponent<ShadowInteractController>();
         if (!cam && Camera.main) cam = Camera.main;
+
+        // [추가] surfaceMask 안 넣었으면 기존 groundMask로 폴백
+        if (surfaceMask.value == 0)
+            surfaceMask = groundMask;
     }
 
     void Update()
@@ -50,14 +54,16 @@ public class ShadowTeleport : MonoBehaviour
         // 게이지 0이면 못 쓰게(원하면 조건 제거 가능)
         if (shadowCtrl.Gauge01 <= 0f) return;
 
-        // 화면 클릭 지점 -> 바닥 레이캐스트
+        // 화면 클릭 지점 -> 표면 레이캐스트 (바닥/벽/천장/플랫폼 등)
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         if (!Physics.Raycast(ray, out RaycastHit hit, rayMaxDistance, surfaceMask, QueryTriggerInteraction.Ignore))
             return;
 
         // 목적지가 "안전 그림자"인지 검사(경계 걸침 방지 포함)
+        // [변경] hit.point(표면점) 자체를 넣어도 되고, 아래처럼 월드포지션으로 넣어도 됨
         float margin = (cc != null) ? cc.radius * 0.9f : 0.35f;
-        if (!shadowCtrl.IsShadowSafeAtWorldPos(hit.point, margin))
+
+        if (!shadowCtrl.IsShadowSafeAtPoint(hit.point, hit.normal, margin))
             return;
 
         // (추후 확장) 거리 제한
@@ -68,26 +74,24 @@ public class ShadowTeleport : MonoBehaviour
             if (Vector3.Distance(a, b) > maxTeleportDistance) return;
         }
 
-        // 순간이동 실행
-        TeleportToGroundPoint(hit.point);
+        // [변경] 순간이동 실행: 바닥뿐 아니라 벽/천장도 대응
+        TeleportToSurface(hit);
 
         // 쿨다운 시작
         cooldownLeft = cooldownSeconds;
     }
 
+    // (유지) 바닥 전용 텔레포트가 필요하면 남겨두되, 현재 흐름에서는 TeleportToSurface를 사용
     void TeleportToGroundPoint(Vector3 groundPoint)
     {
         Vector3 newPos = transform.position;
         newPos.x = groundPoint.x;
         newPos.z = groundPoint.z;
 
-        // CharacterController를 바닥에 정확히 올리기
-        // bottom = pos.y + center.y - height/2  => bottom == groundY
         float groundY = groundPoint.y;
         float desiredY = groundY + (cc.height * 0.5f - cc.center.y) + yLift;
         newPos.y = desiredY;
 
-        // CC가 콜라이더와 겹치면 이동이 꼬일 수 있으니 잠깐 껐다가 위치 지정
         cc.enabled = false;
         transform.position = newPos;
         cc.enabled = true;
@@ -104,7 +108,6 @@ public class ShadowTeleport : MonoBehaviour
         newPos.x = p.x;
         newPos.z = p.z;
 
-        // CharacterController 기준 값
         float halfH = cc.height * 0.5f;
         float centerY = cc.center.y;
 
@@ -116,16 +119,12 @@ public class ShadowTeleport : MonoBehaviour
         // 2) 천장(아래쪽 노말): top을 천장에 맞춤
         else if (n.y < -0.7f)
         {
-            // top = pos.y + centerY + halfH  => top == ceilingY
             newPos.y = p.y - (centerY + halfH) - yLift;
         }
         // 3) 벽(수평 노말): “벽에 달라붙는” 연출용
         else
         {
-            // Y는 클릭 지점 높이 기준으로 feet(바닥)를 맞춰줌(벽을 밟고 있는 느낌을 맞추기 쉬움)
             newPos.y = p.y + (halfH - centerY);
-
-            // 벽 평면 안으로 파고들지 않게, 법선 방향으로 살짝 밀어냄(캡슐 반지름만큼)
             newPos += n * (cc.radius + 0.02f);
         }
 

@@ -14,13 +14,16 @@ public class PlayerController : MonoBehaviour
 
     private CharacterController cc;
 
-
     public float gravity = -25f;
     float verticalVel;
+
+    // [추가] 매 프레임 GetComponent 호출 줄이기(선택이지만 안정적)
+    ShadowInteractController shadowCtrl;
 
     void Awake()
     {
         cc = GetComponent<CharacterController>();
+        shadowCtrl = GetComponent<ShadowInteractController>(); // [추가]
 
         if (cam == null && Camera.main != null)
             cam = Camera.main.transform;
@@ -38,27 +41,60 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        anim.SetBool("isRun", true);
-
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
 
-        // 카메라 기준 이동 (XZ 평면)
-        Vector3 camF = cam ? cam.forward : Vector3.forward;
-        Vector3 camR = cam ? cam.right : Vector3.right;
-        camF.y = 0f; camR.y = 0f;
-        camF.Normalize(); camR.Normalize();
-
-        Vector3 dir = (camR * x + camF * z);
-        if (dir.sqrMagnitude > 1f) dir.Normalize();
-
-        var shadowCtrl = GetComponent<ShadowInteractController>();
-        float speed = moveSpeed * (shadowCtrl ? shadowCtrl.SpeedMultiplier : 1f);
-
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+        bool anchored = inShadow && shadowCtrl.hasSurfaceAnchor;
 
+        Vector3 dir;
+        Vector3 camRForFlip = cam ? cam.right : Vector3.right;
+        camRForFlip.y = 0f;
+        camRForFlip.Normalize();
+
+        if (anchored)
+        {
+            Vector3 n = shadowCtrl.AnchorNormal.normalized;
+
+            // 표면 평면 위의 "좌/우" = 카메라 right를 표면에 투영
+            Vector3 rightOnSurface = (cam ? cam.right : Vector3.right);
+            rightOnSurface = rightOnSurface - Vector3.Dot(rightOnSurface, n) * n;
+            if (rightOnSurface.sqrMagnitude < 0.0001f)
+                rightOnSurface = Vector3.Cross(Vector3.up, n); // 폴백
+            rightOnSurface.Normalize();
+
+            // 표면 평면 위의 "상/하" = 월드 up을 표면에 투영 (벽에서 위로 '등반'이 안정적)
+            Vector3 upOnSurface = Vector3.up - Vector3.Dot(Vector3.up, n) * n;
+
+            // 천장처럼 n이 up/down에 가까우면 upOnSurface가 0에 수렴할 수 있음 → 그땐 cam.forward 투영으로 폴백
+            if (upOnSurface.sqrMagnitude < 0.0001f)
+            {
+                upOnSurface = (cam ? cam.forward : Vector3.forward);
+                upOnSurface = upOnSurface - Vector3.Dot(upOnSurface, n) * n;
+            }
+            upOnSurface.Normalize();
+
+            dir = rightOnSurface * x + upOnSurface * z;
+            if (dir.sqrMagnitude > 1f) dir.Normalize();
+        }
+        else
+        {
+            // 일반 바닥 이동(XZ)
+            Vector3 camF = cam ? cam.forward : Vector3.forward;
+            Vector3 camR = cam ? cam.right : Vector3.right;
+            camF.y = 0f;
+            camR.y = 0f;
+            camF.Normalize();
+            camR.Normalize();
+
+            dir = camR * x + camF * z;
+            if (dir.sqrMagnitude > 1f) dir.Normalize();
+        }
+
+        float speed = moveSpeed * (shadowCtrl ? shadowCtrl.SpeedMultiplier : 1f);
         Vector3 horizontalMove = dir * (speed * Time.deltaTime);
 
+        // [유지] 중력: 그림자 모드에서는 OFF, 밖에서는 ON
         if (inShadow)
         {
             verticalVel = 0f;
@@ -72,16 +108,16 @@ public class PlayerController : MonoBehaviour
         Vector3 move = horizontalMove + Vector3.up * (verticalVel * Time.deltaTime);
         cc.Move(move);
 
-        if (shadowCtrl != null && shadowCtrl.IsInShadowMode && shadowCtrl.hasSurfaceAnchor)
+        // [유지] 앵커가 있으면 표면에 붙도록 스냅(벽/천장/플랫폼에서 “옆에 서있는” 느낌 완화)
+        if (inShadow && shadowCtrl.hasSurfaceAnchor)
         {
             shadowCtrl.SnapToAnchoredSurface(transform);
         }
 
-        if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+        // [유지] 그림자 모드 상태에서 영역을 벗어나면 튕겨나오기
+        if (inShadow)
         {
             float margin = cc != null ? cc.radius * 0.9f : 0.35f;
-
-            // 현재 위치가 더 이상 안전 그림자가 아니면 즉시 튕겨나오기
             if (!shadowCtrl.IsShadowSafeAtWorldPos(transform.position, margin))
                 shadowCtrl.ForceExitShadowMode();
         }
@@ -103,7 +139,7 @@ public class PlayerController : MonoBehaviour
         // 좌/우 바라보기: "이동 방향이 카메라 오른쪽(+)/왼쪽(-) 중 어디냐"로 결정
         if (isRun)
         {
-            float lr = Vector3.Dot(dir, camR); // +면 화면 기준 오른쪽, -면 왼쪽
+            float lr = Vector3.Dot(dir, camRForFlip); // +면 화면 기준 오른쪽, -면 왼쪽
             if (Mathf.Abs(lr) > 0.001f)
             {
                 bool faceRight = lr > 0f;
@@ -111,11 +147,11 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        // 디버그: K 키로 1칸 데미지
         if (Input.GetKeyDown(KeyCode.K))
         {
             GetComponent<PlayerHealth>().TakeDamage(1);
         }
-
     }
 
     void ApplyFlip(bool faceRight)
