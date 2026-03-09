@@ -44,7 +44,7 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
         if (shadowCtrl.IsInShadowMode) { mesh.Clear(); return; }
 
         // 플레이어 발밑이 그림자여야 표시
-        if (!GroundUtil.GetGroundPoint(target, shadowCtrl.groundMask, out var gp, out var gn))
+        if (!GroundUtil.GetGroundPoint(target, shadowCtrl.surfaceMask, out var gp, out var gn))
         {
             mesh.Clear();
             return;

@@ -81,6 +81,36 @@ public class ShadowTeleport : MonoBehaviour
         cooldownLeft = cooldownSeconds;
     }
 
+    // ✅ [추가] 현재 마우스 위치가 "순간이동 가능한 그림자"인지 판정 + hit 반환
+    public bool TryGetTeleportTarget(out RaycastHit hit)
+    {
+        hit = default;
+
+        if (!shadowCtrl || !cam) return false;
+        if (!shadowCtrl.IsInShadowMode) return false;
+        if (!IsReady) return false;
+        if (shadowCtrl.Gauge01 <= 0f) return false;
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (!Physics.Raycast(ray, out hit, rayMaxDistance, surfaceMask, QueryTriggerInteraction.Ignore))
+            return false;
+
+        float margin = (cc != null) ? cc.radius * 0.9f : 0.35f;
+
+        // ✅ 벽/천장도 정확히 판정하려면 WorldPos가 아니라 Point/Normal 기반이 더 좋음
+        if (!shadowCtrl.IsShadowSafeAtPoint(hit.point, hit.normal, margin))
+            return false;
+
+        if (maxTeleportDistance > 0f)
+        {
+            Vector3 a = transform.position; a.y = 0;
+            Vector3 b = hit.point; b.y = 0;
+            if (Vector3.Distance(a, b) > maxTeleportDistance) return false;
+        }
+
+        return true;
+    }
+
     // (유지) 바닥 전용 텔레포트가 필요하면 남겨두되, 현재 흐름에서는 TeleportToSurface를 사용
     void TeleportToGroundPoint(Vector3 groundPoint)
     {

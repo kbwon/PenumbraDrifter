@@ -65,7 +65,7 @@ public class ShadowOutlineVisualizer : MonoBehaviour
         }
 
         // 플레이어 발밑 지점
-        if (!GroundUtil.GetGroundPoint(target, shadowCtrl.groundMask, out var gp, out var gn))
+        if (!GroundUtil.GetGroundPoint(target, shadowCtrl.surfaceMask, out var gp, out var gn))
         {
             ClearLine();
             return;
