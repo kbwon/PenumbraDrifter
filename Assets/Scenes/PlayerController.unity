@@ -314,7 +314,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TeleportMarkerUI
   teleport: {fileID: 1206722596}
   shadowCtrl: {fileID: 1206722595}
-  marker: {fileID: 0}
+  markerRect: {fileID: 362139692}
+  markerImage: {fileID: 362139693}
   canvas: {fileID: 0}
 --- !u!1 &128321068
 GameObject:
