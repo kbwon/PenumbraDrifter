@@ -1,19 +1,21 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
     public Animator anim;
 
-    [Header("Health Pips")]
-    [Min(1)] public int maxPips = 5;  // ✅ 나중에 늘어날 수 있음
+    [Header("Health")]
+    [Min(1)] public int maxPips = 5;
     public int currentPips { get; private set; }
-
-    [Header("Events (Optional)")]
     public bool isDead { get; private set; }
 
     [Header("Game Over")]
-    public GameObject gameOverUI;                 // ✅ Canvas의 GameOver Text(또는 패널) 연결
-    public MonoBehaviour[] controlScriptsToDisable; // ✅ 죽을 때 꺼야 할 스크립트들
+    public GameObject gameOverUI;
+    public MonoBehaviour[] controlScriptsToDisable;
+
+    public event Action<int, int> OnHealthChanged;
+    public event Action OnDead;
 
     void Awake()
     {
@@ -23,21 +25,26 @@ public class PlayerHealth : MonoBehaviour
         if (anim == null)
             anim = GetComponentInChildren<Animator>();
 
-        if (gameOverUI) gameOverUI.SetActive(false);
+        if (gameOverUI)
+            gameOverUI.SetActive(false);
     }
 
-    // ✅ 외부에서 호출: damagePips 만큼 체력 칸 감소 (1~2칸 등)
+    void Start()
+    {
+        NotifyHealthChanged();
+    }
+
     public void TakeDamage(int damagePips)
     {
         if (isDead) return;
         if (damagePips <= 0) return;
 
-        int prev = currentPips;
         currentPips = Mathf.Max(0, currentPips - damagePips);
 
-        // TODO: Damage animation / hit feedback trigger here
-        // (예: 피격 플래시, 카메라 흔들림, 사운드 등)
-        anim.SetBool("hurt", true);
+        if (anim != null)
+            anim.SetBool("hurt", true);
+
+        NotifyHealthChanged();
 
         if (currentPips <= 0)
         {
@@ -46,24 +53,25 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // ✅ (필요시) 회복/최대체력 변경 지원
     public void Heal(int healPips)
     {
         if (isDead) return;
         if (healPips <= 0) return;
 
         currentPips = Mathf.Min(maxPips, currentPips + healPips);
-
-        // TODO: Heal animation / feedback here (optional)
+        NotifyHealthChanged();
     }
 
     public void SetMaxPips(int newMax, bool fillToMax = false)
     {
-        newMax = Mathf.Max(1, newMax);
-        maxPips = newMax;
+        maxPips = Mathf.Max(1, newMax);
 
-        if (fillToMax) currentPips = maxPips;
-        else currentPips = Mathf.Min(currentPips, maxPips);
+        if (fillToMax)
+            currentPips = maxPips;
+        else
+            currentPips = Mathf.Min(currentPips, maxPips);
+
+        NotifyHealthChanged();
     }
 
     void Die()
@@ -71,21 +79,26 @@ public class PlayerHealth : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        // TODO: Game Over animation / sequence trigger here
-        // (예: 사망 연출, UI 페이드, 컨트롤 잠금, 게임오버 화면)
-        anim.SetBool("die", true);
+        if (anim != null)
+            anim.SetBool("die", true);
 
-        // 예시: 컨트롤 비활성화 등을 여기서 처리 가능
-        // ✅ 컨트롤 비활성화
         if (controlScriptsToDisable != null)
         {
-            foreach (var c in controlScriptsToDisable)
+            foreach (MonoBehaviour script in controlScriptsToDisable)
             {
-                if (c != null) c.enabled = false;
+                if (script != null)
+                    script.enabled = false;
             }
         }
 
-        // ✅ GameOver UI 표시
-        if (gameOverUI) gameOverUI.SetActive(true);
+        if (gameOverUI)
+            gameOverUI.SetActive(true);
+
+        OnDead?.Invoke();
+    }
+
+    void NotifyHealthChanged()
+    {
+        OnHealthChanged?.Invoke(currentPips, maxPips);
     }
 }
