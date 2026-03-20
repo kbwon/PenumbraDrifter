@@ -13,18 +13,28 @@ public class TeleportUI : MonoBehaviour
 
     void Awake()
     {
-        if (!lamp) lamp = GetComponent<Image>();
-        if (!shadowCtrl && tp) shadowCtrl = tp.shadowCtrl;
+        if (!lamp)
+            lamp = GetComponent<Image>();
+
+        if (!tp && GameManager.Instance != null)
+            tp = GameManager.Instance.teleport;
+
+        if (!shadowCtrl && tp)
+            shadowCtrl = tp.shadowCtrl;
+
+        if (!shadowCtrl && GameManager.Instance != null)
+            shadowCtrl = GameManager.Instance.shadow;
     }
+
     void Update()
     {
         if (!lamp || !tp || !shadowCtrl) return;
 
-        // "±×¸²ÀÚ ¼Ó + Äð´Ù¿î ³¡"ÀÏ ¶§¸¸ ºÒ ON
+        // ê·¸ë¦¼ìž ëª¨ë“œì´ë©° ìˆœê°„ì´ë™ì´ ì¤€ë¹„ë˜ì—ˆì„ ë•Œë§Œ ë°ê²Œ í‘œì‹œí•œë‹¤.
         bool on = shadowCtrl.IsInShadowMode && tp.IsReady && shadowCtrl.Gauge01 > 0f;
 
-        var c = lamp.color;
-        c.a = on ? onAlpha : offAlpha;
-        lamp.color = c;
+        Color color = lamp.color;
+        color.a = on ? onAlpha : offAlpha;
+        lamp.color = color;
     }
 }

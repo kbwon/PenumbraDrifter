@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class EnemyVision : MonoBehaviour
 {
-    public Transform eye;               // ºñ¿ì¸é this.transform
-    public LayerMask obstacleMask;      // ½Ã¾ß¸¦ ¸·´Â ·¹ÀÌ¾î(º®/¿ÀºêÁ§Æ® µî)
+    public Transform eye;
+    public LayerMask obstacleMask;
     public EnemyConfig config;
 
     Transform target;
@@ -12,8 +12,8 @@ public class EnemyVision : MonoBehaviour
     float visibleTimer;
     float loseGraceTimer;
 
-    public bool IsDetected { get; private set; }  // ¡°¹ß°¢ ¿Ï·á¡± »óÅÂ
-    public bool CanSeeNow { get; private set; }   // ÇöÀç ÇÁ·¹ÀÓ ½Ã¾ß¿¡ º¸ÀÌ´ÂÁö(±×¸²ÀÚ¸é false)
+    public bool IsDetected { get; private set; }
+    public bool CanSeeNow { get; private set; }
 
     public void SetTarget(Transform t)
     {
@@ -23,7 +23,14 @@ public class EnemyVision : MonoBehaviour
 
     void Awake()
     {
-        if (!eye) eye = transform;
+        if (!eye)
+            eye = transform;
+    }
+
+    void Start()
+    {
+        if (target == null && GameManager.Instance != null && GameManager.Instance.PlayerTransform != null)
+            SetTarget(GameManager.Instance.PlayerTransform);
     }
 
     public void ResetDetection()
@@ -42,54 +49,48 @@ public class EnemyVision : MonoBehaviour
             return;
         }
 
-        // ÇÃ·¹ÀÌ¾î°¡ ¡°±×¸²ÀÚ ¸ðµå¡±ÀÌ¸é ÀûÀº ¸ø º½
+        // ê·¸ë¦¼ìž ëª¨ë“œì˜ í”Œë ˆì´ì–´ëŠ” ë³´ì§€ ëª»í•œë‹¤.
         if (targetShadow && targetShadow.IsInShadowMode)
         {
             CanSeeNow = false;
-            // °¨Áö ÁßÀÌ¾ú´Ù¸é ¹Ù·Î ²÷±âÁö ¾Ê°Ô grace·Î Ã³¸®
             loseGraceTimer += Time.deltaTime;
             if (loseGraceTimer >= config.loseSightGrace)
-            {
                 visibleTimer = 0f;
-            }
             return;
         }
 
         Vector3 origin = eye.position;
-        Vector3 toT = target.position - origin;
-        toT.y = 0f;
+        Vector3 toTarget = target.position - origin;
+        toTarget.y = 0f;
 
-        float dist = toT.magnitude;
-        if (dist > config.viewDistance || dist < 0.001f)
+        float distance = toTarget.magnitude;
+        if (distance > config.viewDistance || distance < 0.001f)
         {
             CanSeeNow = false;
             DecayDetection();
             return;
         }
 
-        // °¢µµ Ã¼Å©
-        Vector3 fwd = eye.forward; fwd.y = 0f; fwd.Normalize();
-        Vector3 dir = toT / dist;
+        Vector3 forward = eye.forward;
+        forward.y = 0f;
+        forward.Normalize();
 
-        float ang = Vector3.Angle(fwd, dir);
-        if (ang > config.viewAngle * 0.5f)
+        Vector3 dir = toTarget / distance;
+        float angle = Vector3.Angle(forward, dir);
+        if (angle > config.viewAngle * 0.5f)
         {
             CanSeeNow = false;
             DecayDetection();
             return;
         }
 
-        // ½Ã¾ß °¡¸²(LOS)
-        // Raycast´Â ³ôÀÌ°¡ ³Ê¹« ³·À¸¸é ¹Ù´Ú/¿ÀºêÁ§Æ®¿¡ °É¸± ¼ö ÀÖÀ¸´Ï eye À§Ä¡¸¦ Àû´çÈ÷ Àâ¾ÆÁÖ¼¼¿ä.
-        if (Physics.Raycast(origin, dir, out RaycastHit hit, dist, obstacleMask, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(origin, dir, out RaycastHit hit, distance, obstacleMask, QueryTriggerInteraction.Ignore))
         {
-            // Áß°£¿¡ Àå¾Ö¹°ÀÌ ÀÖÀ¸¸é ¸ø º½
             CanSeeNow = false;
             DecayDetection();
             return;
         }
 
-        // ¿©±â±îÁö ¿À¸é ¡°ÇöÀç º¸ÀÓ¡±
         CanSeeNow = true;
         loseGraceTimer = 0f;
 
@@ -97,9 +98,7 @@ public class EnemyVision : MonoBehaviour
         {
             visibleTimer += Time.deltaTime;
             if (visibleTimer >= config.detectTimeRequired)
-            {
                 IsDetected = true;
-            }
         }
     }
 
@@ -109,26 +108,28 @@ public class EnemyVision : MonoBehaviour
         loseGraceTimer += Time.deltaTime;
 
         if (loseGraceTimer >= config.loseSightGrace)
-        {
             visibleTimer = 0f;
-        }
     }
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
         if (!config) return;
-        Transform e = eye ? eye : transform;
-        Vector3 pos = e.position;
+
+        Transform eyeTransform = eye ? eye : transform;
+        Vector3 pos = eyeTransform.position;
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(pos, config.viewDistance);
 
-        Vector3 fwd = e.forward; fwd.y = 0f; fwd.Normalize();
-        Quaternion left = Quaternion.Euler(0, -config.viewAngle * 0.5f, 0);
-        Quaternion right = Quaternion.Euler(0, config.viewAngle * 0.5f, 0);
-        Gizmos.DrawLine(pos, pos + (left * fwd) * config.viewDistance);
-        Gizmos.DrawLine(pos, pos + (right * fwd) * config.viewDistance);
+        Vector3 forward = eyeTransform.forward;
+        forward.y = 0f;
+        forward.Normalize();
+
+        Quaternion left = Quaternion.Euler(0f, -config.viewAngle * 0.5f, 0f);
+        Quaternion right = Quaternion.Euler(0f, config.viewAngle * 0.5f, 0f);
+        Gizmos.DrawLine(pos, pos + (left * forward) * config.viewDistance);
+        Gizmos.DrawLine(pos, pos + (right * forward) * config.viewDistance);
     }
 #endif
 }

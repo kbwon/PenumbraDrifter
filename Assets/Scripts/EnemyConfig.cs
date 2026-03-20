@@ -6,16 +6,16 @@ public class EnemyConfig : ScriptableObject
     [Header("Vision")]
     public float viewDistance = 8f;
     [Range(0f, 180f)] public float viewAngle = 90f;
-    public float detectTimeRequired = 1.2f;   // 1~2ÃÊ ÃßÃµ
-    public float loseSightGrace = 0.2f;       // Àá±ñ °¡·ÁÁ®µµ ¹Ù·Î ³õÄ¡Áö ¾Ê°Ô
+    public float detectTimeRequired = 1.2f;   // ë°œê°ê¹Œì§€ í•„ìš”í•œ ì‹œê°„
+    public float loseSightGrace = 0.2f;       // ì ê¹ ê°€ë ¤ì ¸ë„ ìœ ì§€í•˜ëŠ” ì‹œê°„
 
     [Header("Movement")]
     public float moveSpeed = 2.5f;
     public float returnSpeed = 2.0f;
-    public float stopDistance = 0.8f;         // ÇÃ·¹ÀÌ¾î ¾Õ¿¡¼­ ¸ØÃâ °Å¸®
+    public float stopDistance = 0.8f;         // í”Œë ˆì´ì–´ ì•ì—ì„œ ë©ˆì¶œ ê±°ë¦¬
 
     [Header("After Lost")]
-    public float waitAfterLost = 1.0f;        // ¸ø Ã£À¸¸é Àá±ñ ¸ØÃçÀÖ´Â ½Ã°£
+    public float waitAfterLost = 1.0f;        // ë†“ì¹œ ë’¤ ì ê¹ ëŒ€ê¸°í•˜ëŠ” ì‹œê°„
 
     [Header("Damage")]
     public int contactDamagePips = 1;

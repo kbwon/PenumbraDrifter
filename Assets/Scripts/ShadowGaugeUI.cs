@@ -10,10 +10,14 @@ public class ShadowGaugeUI : MonoBehaviour
     {
         if (!slider)
             slider = GetComponent<Slider>();
+
+        TryBindShadow();
     }
 
     void OnEnable()
     {
+        TryBindShadow();
+
         if (shadowCtrl != null)
             shadowCtrl.OnGaugeChanged += HandleGaugeChanged;
     }
@@ -27,6 +31,12 @@ public class ShadowGaugeUI : MonoBehaviour
     {
         if (shadowCtrl != null)
             shadowCtrl.OnGaugeChanged -= HandleGaugeChanged;
+    }
+
+    void TryBindShadow()
+    {
+        if (shadowCtrl == null && GameManager.Instance != null)
+            shadowCtrl = GameManager.Instance.shadow;
     }
 
     void HandleGaugeChanged(float value)

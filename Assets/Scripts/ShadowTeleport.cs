@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
+[RequireComponent(typeof(Rigidbody))]
 public class ShadowTeleport : MonoBehaviour
 {
     [Header("Refs")]
@@ -15,12 +15,11 @@ public class ShadowTeleport : MonoBehaviour
     [Header("Teleport")]
     public float cooldownSeconds = 10f;
     public float maxTeleportDistance = 0f;
-    public float yLift = 0.02f;
+    public float floorOffset = 0.02f;
     public float wallOffset = 0.02f;
 
     float cooldownLeft;
     Rigidbody rb;
-    CapsuleCollider bodyCol;
 
     public bool IsReady => cooldownLeft <= 0f;
     public float Cooldown01 => Mathf.Clamp01(cooldownLeft / Mathf.Max(0.01f, cooldownSeconds));
@@ -28,10 +27,21 @@ public class ShadowTeleport : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        bodyCol = GetComponent<CapsuleCollider>();
 
-        if (!shadowCtrl) shadowCtrl = GetComponent<ShadowInteractController>();
-        if (!cam && Camera.main) cam = Camera.main;
+        if (!shadowCtrl)
+            shadowCtrl = GetComponent<ShadowInteractController>();
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.RegisterTeleport(this);
+
+        if (!cam)
+        {
+            if (GameManager.Instance != null)
+                cam = GameManager.Instance.mainCamera;
+
+            if (!cam)
+                cam = Camera.main;
+        }
 
         if (surfaceMask.value == 0)
             surfaceMask = groundMask;
@@ -54,6 +64,7 @@ public class ShadowTeleport : MonoBehaviour
         cooldownLeft = cooldownSeconds;
     }
 
+    // 마우스가 가리키는 표면이 순간이동 가능한지 검사한다.
     public bool TryGetTeleportTarget(out RaycastHit hit)
     {
         hit = default;
@@ -67,7 +78,7 @@ public class ShadowTeleport : MonoBehaviour
         if (!Physics.Raycast(ray, out hit, rayMaxDistance, surfaceMask, QueryTriggerInteraction.Ignore))
             return false;
 
-        float margin = GetBodyRadius() * 0.9f;
+        float margin = shadowCtrl.GetActiveMargin(0.9f);
         if (!shadowCtrl.IsShadowSafeAtPoint(hit.point, hit.normal, margin))
             return false;
 
@@ -89,35 +100,10 @@ public class ShadowTeleport : MonoBehaviour
     {
         Vector3 point = hit.point;
         Vector3 normal = hit.normal.normalized;
-        Vector3 newPos = rb.position;
+        float offset = Mathf.Abs(normal.y) > 0.7f ? floorOffset : wallOffset;
 
-        newPos.x = point.x;
-        newPos.z = point.z;
-
-        float halfHeight = bodyCol.height * 0.5f;
-        float centerY = bodyCol.center.y;
-
-        if (normal.y > 0.7f)
-        {
-            newPos.y = point.y + (halfHeight - centerY) + yLift;
-        }
-        else if (normal.y < -0.7f)
-        {
-            newPos.y = point.y - (centerY + halfHeight) - yLift;
-        }
-        else
-        {
-            newPos.y = point.y + (halfHeight - centerY);
-            newPos += normal * (GetBodyRadius() + wallOffset);
-        }
-
-        rb.position = newPos;
+        rb.position = shadowCtrl.GetRootPositionForSurfaceHit(point, normal, offset);
         rb.linearVelocity = Vector3.zero;
         shadowCtrl.SetSurfaceAnchor(normal, hit.collider);
-    }
-
-    float GetBodyRadius()
-    {
-        return bodyCol != null ? bodyCol.radius : 0.35f;
     }
 }

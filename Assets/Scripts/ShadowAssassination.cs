@@ -13,8 +13,14 @@ public class ShadowAssassination : MonoBehaviour
 
     void Awake()
     {
-        if (!shadowCtrl) shadowCtrl = GetComponent<ShadowInteractController>();
-        if (!anim) anim = GetComponentInChildren<Animator>();
+        if (!shadowCtrl)
+            shadowCtrl = GetComponent<ShadowInteractController>();
+
+        if (!shadowCtrl && GameManager.Instance != null)
+            shadowCtrl = GameManager.Instance.shadow;
+
+        if (!anim)
+            anim = GetComponentInChildren<Animator>();
     }
 
     void Update()
@@ -22,12 +28,13 @@ public class ShadowAssassination : MonoBehaviour
         if (!shadowCtrl) return;
         if (!shadowCtrl.IsInShadowMode) return;
         if (!Input.GetKeyDown(assassinateKey)) return;
-        if (!shadowCtrl.TryGetCurrentSurfacePoint(out var surfacePoint, out var surfaceNormal)) return;
+        if (!shadowCtrl.TryGetCurrentSurfacePoint(out Vector3 point, out Vector3 normal)) return;
         if (!shadowCtrl.sun || shadowCtrl.sun.type != LightType.Directional) return;
 
-        Vector3 origin = surfacePoint + surfaceNormal * rayEps;
+        Vector3 origin = point + normal * rayEps;
         Vector3 toLight = -shadowCtrl.sun.transform.forward;
 
+        // 현재 위치 그림자의 주인을 찾아 암살 대상을 찾는다.
         if (Physics.Raycast(origin, toLight, out RaycastHit hit, shadowCtrl.maxDirDistance,
             shadowCtrl.occluderMask, QueryTriggerInteraction.Ignore))
         {

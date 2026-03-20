@@ -2,10 +2,23 @@ using UnityEngine;
 
 public static class ShadowQuery
 {
-    // point: ¹Ù´Ú À§ ÆÇÁ¤ÇÒ ÁöÁ¡
-    // normal: ¹Ù´Ú ¹ı¼±(ÆòÆòÇÏ¸é Vector3.up)
-    // lights: ¾À¿¡¼­ »ç¿ëÇÒ Lightµé(º¸Åë Directional 1°³ + ÇÊ¿äÇÑ ¸¸Å­)
-    // occluderMask: ºûÀ» ¸·´Â ¿ÀºêÁ§Æ® ·¹ÀÌ¾î(º®/»óÀÚ/°Ç¹° µî). ÇÃ·¹ÀÌ¾î/Æ®¸®°Å´Â Á¦¿Ü ±ÇÀå.
+    // ë‹¨ì¼ ê´‘ì› ê¸°ì¤€ìœ¼ë¡œ ê·¸ë¦¼ìì¸ì§€ ê²€ì‚¬í•œë‹¤.
+    public static bool IsPointInShadow(
+        Vector3 point,
+        Vector3 normal,
+        Light light,
+        LayerMask occluderMask,
+        float eps = 0.03f,
+        float maxDirDistance = 80f)
+    {
+        if (light == null || !light.enabled) return false;
+        if (light.shadows == LightShadows.None) return false;
+
+        Vector3 origin = point + normal.normalized * eps;
+        return !IsLitByLight(origin, light, occluderMask, maxDirDistance);
+    }
+
+    // ì—¬ëŸ¬ ê´‘ì› ì¤‘ í•˜ë‚˜ë¼ë„ ë¹„ì¶”ë©´ ê·¸ë¦¼ìê°€ ì•„ë‹ˆë‹¤.
     public static bool IsPointInShadow(
         Vector3 point,
         Vector3 normal,
@@ -14,83 +27,61 @@ public static class ShadowQuery
         float eps = 0.03f,
         float maxDirDistance = 80f)
     {
-        // ¿øÁ¡ÀÌ ¹Ù´Ú¿¡ ³Ê¹« ºÙÀ¸¸é ÀÚ±â ÀÚ½ÅÀ» Ä¡´Â °æ¿ì°¡ ÀÖ¾î¼­ »ìÂ¦ ¶ç¿ò
-        Vector3 origin = point + normal * eps;
+        if (lights == null || lights.Length == 0) return false;
 
-        bool litByAny = false;
+        Vector3 origin = point + normal.normalized * eps;
 
-        foreach (var l in lights)
+        for (int i = 0; i < lights.Length; i++)
         {
-            if (l == null || !l.enabled) continue;
+            Light light = lights[i];
+            if (light == null || !light.enabled) continue;
+            if (light.shadows == LightShadows.None) continue;
 
-            // ¶óÀÌÆ®°¡ ±×¸²ÀÚ¸¦ ²¨µĞ °æ¿ì´Â "°ÔÀÓ ±ÔÄ¢ ¶óÀÌÆ®"¿¡¼­ Á¦¿ÜÇÏ´Â °Ô º¸Åë ÀÚ¿¬½º·¯¿ò
-            if (l.shadows == LightShadows.None) continue;
-
-            if (IsLitByLight(origin, point, l, occluderMask, maxDirDistance))
-            {
-                litByAny = true;
-                break;
-            }
+            if (IsLitByLight(origin, light, occluderMask, maxDirDistance))
+                return false;
         }
 
-        return !litByAny;
+        return true;
     }
 
+    // ê´‘ì› íƒ€ì…ë³„ë¡œ ì‹¤ì œ ì¡°ëª… ë„ë‹¬ ì—¬ë¶€ë¥¼ ê³„ì‚°í•œë‹¤.
     static bool IsLitByLight(
         Vector3 origin,
-        Vector3 point,
-        Light l,
+        Light light,
         LayerMask occluderMask,
         float maxDirDistance)
     {
-        switch (l.type)
+        switch (light.type)
         {
             case LightType.Directional:
-                {
-                    // Unity¿¡¼­ Light´Â transform.forward ¹æÇâÀ¸·Î ¡°ºñÃß´Â¡± ÆíÀÌ¹Ç·Î,
-                    // ÁöÁ¡->±¤¿ø ¹æÇâÀº -forward ·Î º¸¸é ¾ÈÀüÇÕ´Ï´Ù.
-                    Vector3 toLight = -l.transform.forward;
-
-                    // ½Ã°¢Àû shadow distance¿Í ¸ÂÃß°í ½ÍÀ¸¸é maxDirDistance¸¦ URP Shadow Distance·Î ¸ÂÃß¼¼¿ä.
-                    if (Physics.Raycast(origin, toLight, out RaycastHit hit, maxDirDistance, occluderMask, QueryTriggerInteraction.Ignore))
-                    {
-                        // Áß°£¿¡ ¹º°¡ ¸ÂÀ¸¸é ±× ¶óÀÌÆ®´Â °¡·ÁÁü(=±×¸²ÀÚ)
-                        return false;
-                    }
-                    return true; // ¸·ÈûÀÌ ¾øÀ¸¸é ¹àÀ½
-                }
+            {
+                Vector3 toLight = -light.transform.forward;
+                return !Physics.Raycast(origin, toLight, maxDirDistance, occluderMask, QueryTriggerInteraction.Ignore);
+            }
 
             case LightType.Point:
-                {
-                    Vector3 toLightVec = (l.transform.position - origin);
-                    float dist = toLightVec.magnitude;
-                    if (dist > l.range) return false; // ¹üÀ§ ¹ÛÀÌ¸é ÀÌ ¶óÀÌÆ® ¿µÇâ ¾øÀ½(=lit ¾Æ´Ô)
+            {
+                Vector3 toLightVec = light.transform.position - origin;
+                float dist = toLightVec.magnitude;
+                if (dist > light.range) return false;
 
-                    Vector3 dir = toLightVec / dist;
-                    if (Physics.Raycast(origin, dir, out RaycastHit hit, dist, occluderMask, QueryTriggerInteraction.Ignore))
-                        return false; // ¸·Èû
-
-                    return true;
-                }
+                Vector3 dir = toLightVec / dist;
+                return !Physics.Raycast(origin, dir, dist, occluderMask, QueryTriggerInteraction.Ignore);
+            }
 
             case LightType.Spot:
-                {
-                    Vector3 toLightVec = (l.transform.position - origin);
-                    float dist = toLightVec.magnitude;
-                    if (dist > l.range) return false;
+            {
+                Vector3 toLightVec = light.transform.position - origin;
+                float dist = toLightVec.magnitude;
+                if (dist > light.range) return false;
 
-                    Vector3 dirToLight = toLightVec / dist;
+                Vector3 dirToLight = toLightVec / dist;
+                float cosHalf = Mathf.Cos(light.spotAngle * 0.5f * Mathf.Deg2Rad);
+                float cosAng = Vector3.Dot(light.transform.forward, -dirToLight);
+                if (cosAng < cosHalf) return false;
 
-                    // ½ºÆ÷Æ® °¢µµ Ã¼Å©(¶óÀÌÆ® forward ¹æÇâÀ¸·Î ºñÃß´Â ¿ø»Ô)
-                    float cosHalf = Mathf.Cos(l.spotAngle * 0.5f * Mathf.Deg2Rad);
-                    float cosAng = Vector3.Dot(l.transform.forward, -dirToLight);
-                    if (cosAng < cosHalf) return false; // ½ºÆ÷Æ® ¿ø»Ô ¹Û
-
-                    if (Physics.Raycast(origin, dirToLight, out RaycastHit hit, dist, occluderMask, QueryTriggerInteraction.Ignore))
-                        return false;
-
-                    return true;
-                }
+                return !Physics.Raycast(origin, dirToLight, dist, occluderMask, QueryTriggerInteraction.Ignore);
+            }
 
             default:
                 return false;

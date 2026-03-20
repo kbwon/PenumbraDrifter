@@ -13,8 +13,15 @@ public class HealthUI : MonoBehaviour
     public Image pipPrefab;
     public RectTransform container;
 
+    void Awake()
+    {
+        TryBindHealth();
+    }
+
     void OnEnable()
     {
+        TryBindHealth();
+
         if (health != null)
             health.OnHealthChanged += HandleHealthChanged;
     }
@@ -33,6 +40,12 @@ public class HealthUI : MonoBehaviour
             health.OnHealthChanged -= HandleHealthChanged;
     }
 
+    void TryBindHealth()
+    {
+        if (health == null && GameManager.Instance != null)
+            health = GameManager.Instance.health;
+    }
+
     void HandleHealthChanged(int current, int max)
     {
         if (autoBuild && (pips == null || pips.Length != max))
@@ -43,7 +56,7 @@ public class HealthUI : MonoBehaviour
 
     void Refresh()
     {
-        if (!health) return;
+        if (health == null) return;
         if (pips == null) return;
 
         int current = health.currentPips;
@@ -54,14 +67,15 @@ public class HealthUI : MonoBehaviour
 
         for (int i = 0; i < pips.Length; i++)
         {
-            if (!pips[i]) continue;
+            if (pips[i] == null) continue;
             pips[i].enabled = i < current;
         }
     }
 
+    // 최대 체력이 바뀌면 pip 개수를 다시 만든다.
     void BuildOrResizePips()
     {
-        if (!health || !pipPrefab || !container) return;
+        if (health == null || pipPrefab == null || container == null) return;
 
         for (int i = container.childCount - 1; i >= 0; i--)
             Destroy(container.GetChild(i).gameObject);

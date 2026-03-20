@@ -25,8 +25,11 @@ public class PlayerHealth : MonoBehaviour
         if (anim == null)
             anim = GetComponentInChildren<Animator>();
 
-        if (gameOverUI)
+        if (gameOverUI != null)
             gameOverUI.SetActive(false);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.RegisterHealth(this);
     }
 
     void Start()
@@ -34,6 +37,7 @@ public class PlayerHealth : MonoBehaviour
         NotifyHealthChanged();
     }
 
+    // 데미지를 받아 체력 칸을 줄인다.
     public void TakeDamage(int damagePips)
     {
         if (isDead) return;
@@ -84,15 +88,19 @@ public class PlayerHealth : MonoBehaviour
 
         if (controlScriptsToDisable != null)
         {
-            foreach (MonoBehaviour script in controlScriptsToDisable)
+            for (int i = 0; i < controlScriptsToDisable.Length; i++)
             {
+                MonoBehaviour script = controlScriptsToDisable[i];
                 if (script != null)
                     script.enabled = false;
             }
         }
 
-        if (gameOverUI)
+        if (gameOverUI != null)
             gameOverUI.SetActive(true);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetGameOver(true);
 
         OnDead?.Invoke();
     }

@@ -3,7 +3,7 @@ using UnityEngine;
 public class FollowCamera : MonoBehaviour
 {
     public Transform target;
-    public Vector3 offset = new Vector3(0f, 10f, -15f);  // À§/µÚ·Î
+    public Vector3 offset = new Vector3(0f, 10f, -15f);
     public Vector3 lookAtOffset = new Vector3(0f, 6f, 0f);
 
     public float followSmooth = 12f;
@@ -16,29 +16,42 @@ public class FollowCamera : MonoBehaviour
     float targetYaw;
     float currentYaw;
 
+    void Awake()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.RegisterFollowCamera(this);
+
+        Camera cam = GetComponent<Camera>();
+        if (cam != null && GameManager.Instance != null)
+            GameManager.Instance.RegisterMainCamera(cam);
+    }
+
     void Start()
     {
         currentYaw = transform.eulerAngles.y;
         targetYaw = currentYaw;
+
+        if (target == null && GameManager.Instance != null)
+            target = GameManager.Instance.PlayerTransform;
     }
 
     void LateUpdate()
     {
+        if (target == null && GameManager.Instance != null)
+            target = GameManager.Instance.PlayerTransform;
+
         if (!target) return;
 
-        // ÀÔ·Â: 45µµ¾¿ È¸Àü
+        // ì¹´ë©”ë¼ë¥¼ 45ë„ ë‹¨ìœ„ë¡œ íšŒì „í•œë‹¤.
         if (Input.GetKeyDown(rotateLeftKey)) targetYaw += stepAngle;
         if (Input.GetKeyDown(rotateRightKey)) targetYaw -= stepAngle;
 
-        // ºÎµå·¯¿î Yaw º¸°£
         currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, rotateSmooth * Time.deltaTime);
         Quaternion yawRot = Quaternion.Euler(0f, currentYaw, 0f);
 
-        // À§Ä¡: Å¸°Ù + (È¸ÀüµÈ ¿ÀÇÁ¼Â)
         Vector3 desiredPos = target.position + yawRot * offset;
         transform.position = Vector3.Lerp(transform.position, desiredPos, followSmooth * Time.deltaTime);
 
-        // ¹Ù¶óº¸±â
         Vector3 lookPoint = target.position + lookAtOffset;
         transform.rotation = Quaternion.LookRotation((lookPoint - transform.position).normalized, Vector3.up);
     }

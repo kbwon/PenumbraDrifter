@@ -31,6 +31,18 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
         mesh = new Mesh { name = "ShadowAreaMesh" };
         mf.sharedMesh = mesh;
         size = radiusCells * 2 + 1;
+
+        if (GameManager.Instance != null)
+        {
+            if (target == null && GameManager.Instance.PlayerTransform != null)
+                target = GameManager.Instance.PlayerTransform;
+
+            if (shadowCtrl == null)
+                shadowCtrl = GameManager.Instance.shadow;
+
+            if (player == null)
+                player = GameManager.Instance.player;
+        }
     }
 
     void LateUpdate()
@@ -54,13 +66,15 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
             return;
         }
 
-        if (!shadowCtrl.TryGetCurrentSurfacePoint(out var surfacePoint, out var surfaceNormal))
+        if (!shadowCtrl.TryGetCurrentSurfacePoint(out Vector3 surfacePoint, out Vector3 surfaceNormal))
         {
             mesh.Clear();
             return;
         }
 
-        float currentMargin = usePlayerRadius && player != null ? player.BodyRadius * 0.9f : margin;
+        float currentMargin = usePlayerRadius && player != null
+            ? shadowCtrl.GetActiveRadiusWorld() * 0.9f
+            : margin;
 
         if (!shadowCtrl.IsShadowSafeAtPoint(surfacePoint, surfaceNormal, currentMargin))
         {
@@ -90,6 +104,7 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
         int[] dx = { 1, -1, 0, 0 };
         int[] dz = { 0, 0, 1, -1 };
 
+        // 현재 위치와 연결된 셀만 표시한다.
         while (queue.Count > 0)
         {
             Vector2Int p = queue.Dequeue();
@@ -106,7 +121,8 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
                 if (visited[nx, nz]) continue;
 
                 visited[nx, nz] = true;
-                if (ok[nx, nz]) queue.Enqueue(new Vector2Int(nx, nz));
+                if (ok[nx, nz])
+                    queue.Enqueue(new Vector2Int(nx, nz));
             }
         }
 

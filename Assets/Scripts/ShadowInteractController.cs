@@ -30,6 +30,12 @@ public class ShadowInteractController : MonoBehaviour
 
     [Header("Anchor")]
     public float anchorSurfaceOffset = 0.08f;
+    public float anchorProbeOffset = 1f;
+    public float anchorProbeDistance = 2.5f;
+
+    [Header("Colliders")]
+    public CapsuleCollider normalCollider;
+    public CapsuleCollider shadowCollider;
 
     bool inShadowMode;
     bool indicatorVisible;
@@ -47,12 +53,37 @@ public class ShadowInteractController : MonoBehaviour
     public float SpeedMultiplier => inShadowMode ? shadowSpeedMul : 1f;
     public float Gauge01 => gauge01;
     public bool HasSurfaceAnchor => hasSurfaceAnchorInternal;
-    public bool hasSurfaceAnchor => hasSurfaceAnchorInternal;
     public Vector3 AnchorNormal => anchorNormal;
+
+    // 현재 상태에 맞는 콜라이더를 반환한다.
+    public CapsuleCollider ActiveCollider
+    {
+        get
+        {
+            if (inShadowMode)
+            {
+                if (shadowCollider != null) return shadowCollider;
+                if (normalCollider != null) return normalCollider;
+            }
+            else
+            {
+                if (normalCollider != null) return normalCollider;
+                if (shadowCollider != null) return shadowCollider;
+            }
+
+            return GetComponent<CapsuleCollider>();
+        }
+    }
 
     void Awake()
     {
-        if (shadowIndicator) shadowIndicator.SetActive(false);
+        CacheColliders();
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.RegisterShadow(this);
+
+        if (shadowIndicator != null)
+            shadowIndicator.SetActive(false);
 
         if (visualRoot != null)
             visualOriginalLocalPos = visualRoot.localPosition;
@@ -60,12 +91,13 @@ public class ShadowInteractController : MonoBehaviour
         if (surfaceMask.value == 0)
             surfaceMask = groundMask;
 
+        ApplyColliderMode(false);
         NotifyGaugeChanged(true);
     }
 
     void Update()
     {
-        if (!TryGetCurrentSurfacePoint(out var surfacePoint, out var surfaceNormal))
+        if (!TryGetCurrentSurfacePoint(out Vector3 point, out Vector3 normal))
         {
             SetIndicator(false);
 
@@ -75,7 +107,7 @@ public class ShadowInteractController : MonoBehaviour
             return;
         }
 
-        bool onShadow = IsShadowAtPoint(surfacePoint, surfaceNormal);
+        bool onShadow = IsShadowAtPoint(point, normal);
 
         if (!inShadowMode)
             SetIndicator(onShadow);
@@ -95,6 +127,35 @@ public class ShadowInteractController : MonoBehaviour
             {
                 ExitShadowMode();
             }
+        }
+    }
+
+    void CacheColliders()
+    {
+        if (normalCollider != null && shadowCollider != null)
+            return;
+
+        CapsuleCollider[] cols = GetComponentsInChildren<CapsuleCollider>(true);
+        for (int i = 0; i < cols.Length; i++)
+        {
+            CapsuleCollider col = cols[i];
+            if (col == null) continue;
+
+            if (col.gameObject == gameObject)
+            {
+                if (normalCollider == null)
+                    normalCollider = col;
+                continue;
+            }
+
+            if (normalCollider == null)
+            {
+                normalCollider = col;
+                continue;
+            }
+
+            if (shadowCollider == null && col != normalCollider)
+                shadowCollider = col;
         }
     }
 
@@ -127,6 +188,7 @@ public class ShadowInteractController : MonoBehaviour
     void EnterShadowMode()
     {
         inShadowMode = true;
+        ApplyColliderMode(true);
 
         if (visualRoot != null)
         {
@@ -142,12 +204,25 @@ public class ShadowInteractController : MonoBehaviour
     void ExitShadowMode()
     {
         inShadowMode = false;
+        ApplyColliderMode(false);
 
         if (visualRoot != null)
             visualRoot.localPosition = visualOriginalLocalPos;
 
         ClearSurfaceAnchor();
         OnShadowModeChanged?.Invoke(false);
+    }
+
+    void ApplyColliderMode(bool shadowMode)
+    {
+        if (normalCollider != null && normalCollider != shadowCollider)
+            normalCollider.enabled = !shadowMode;
+
+        if (shadowCollider != null)
+            shadowCollider.enabled = shadowMode;
+
+        if (normalCollider != null && shadowCollider == null)
+            normalCollider.enabled = true;
     }
 
     void NotifyGaugeChanged(bool force)
@@ -161,21 +236,22 @@ public class ShadowInteractController : MonoBehaviour
 
     void SetIndicator(bool visible)
     {
-        if (!shadowIndicator) return;
+        if (shadowIndicator == null) return;
         if (indicatorVisible == visible) return;
 
         indicatorVisible = visible;
         shadowIndicator.SetActive(visible);
     }
 
+    // 현재 표면의 점과 법선을 구한다.
     public bool TryGetCurrentSurfacePoint(out Vector3 point, out Vector3 normal)
     {
         if (hasSurfaceAnchorInternal && anchorCollider != null)
         {
-            Vector3 origin = transform.position + anchorNormal * 1.0f;
+            Vector3 origin = transform.position + anchorNormal * anchorProbeOffset;
             Vector3 dir = -anchorNormal;
 
-            if (Physics.Raycast(origin, dir, out RaycastHit hit, 2.5f, ~0, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, anchorProbeDistance, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (hit.collider == anchorCollider)
                 {
@@ -210,19 +286,20 @@ public class ShadowInteractController : MonoBehaviour
         return false;
     }
 
+    // 표면의 한 점이 그림자인지 검사한다.
     public bool IsShadowAtPoint(Vector3 point, Vector3 normal)
     {
-        return ShadowQueryDirectional.IsInShadow(point, normal, sun, occluderMask, maxDistance: maxDirDistance);
+        return ShadowQuery.IsPointInShadow(point, normal, sun, occluderMask, maxDirDistance: maxDirDistance);
     }
 
     public bool IsShadowSafeAtWorldPos(Vector3 worldPos, float margin)
     {
         if (hasSurfaceAnchorInternal && anchorCollider != null)
         {
-            Vector3 origin = worldPos + anchorNormal * 1.0f;
+            Vector3 origin = worldPos + anchorNormal * anchorProbeOffset;
             Vector3 dir = -anchorNormal;
 
-            if (Physics.Raycast(origin, dir, out RaycastHit hit, 2.5f, ~0, QueryTriggerInteraction.Ignore)
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, anchorProbeDistance, ~0, QueryTriggerInteraction.Ignore)
                 && hit.collider == anchorCollider)
             {
                 return IsShadowSafeAtPoint(hit.point, hit.normal, margin);
@@ -236,10 +313,11 @@ public class ShadowInteractController : MonoBehaviour
         return IsShadowSafeAtPoint(hitDown.point, hitDown.normal, margin);
     }
 
+    // 중심과 주변 점을 함께 검사해 안전한 그림자인지 확인한다.
     public bool IsShadowSafeAtPoint(Vector3 point, Vector3 normal, float margin)
     {
         normal = normal.normalized;
-        BuildTangents(normal, out var t1, out var t2);
+        BuildTangents(normal, out Vector3 t1, out Vector3 t2);
 
         Vector3[] offsets =
         {
@@ -286,18 +364,116 @@ public class ShadowInteractController : MonoBehaviour
         anchorCollider = null;
     }
 
-    public void SnapToAnchoredSurface(Rigidbody body, float snapDistance = 2f)
+    // 붙은 표면을 다시 찾아 플레이어를 표면에 맞춘다.
+    public void SnapToAnchoredSurface(Transform actor, float snapDistance = 2f)
     {
-        if (!body || !hasSurfaceAnchorInternal || anchorCollider == null) return;
+        if (actor == null || !hasSurfaceAnchorInternal || anchorCollider == null) return;
 
-        Vector3 origin = body.position + anchorNormal * 1.0f;
+        Vector3 origin = actor.position + anchorNormal * anchorProbeOffset;
         Vector3 dir = -anchorNormal;
 
         if (Physics.Raycast(origin, dir, out RaycastHit hit, snapDistance, ~0, QueryTriggerInteraction.Ignore))
         {
             if (hit.collider != anchorCollider) return;
-
-            body.position = hit.point + anchorNormal * anchorSurfaceOffset;
+            actor.position = GetRootPositionForSurfaceHit(hit.point, hit.normal, anchorSurfaceOffset);
         }
+    }
+
+    public void SnapToAnchoredSurface(Rigidbody body, float snapDistance = 2f)
+    {
+        if (body == null || !hasSurfaceAnchorInternal || anchorCollider == null) return;
+
+        Vector3 origin = body.position + anchorNormal * anchorProbeOffset;
+        Vector3 dir = -anchorNormal;
+
+        if (Physics.Raycast(origin, dir, out RaycastHit hit, snapDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.collider != anchorCollider) return;
+            body.position = GetRootPositionForSurfaceHit(hit.point, hit.normal, anchorSurfaceOffset);
+        }
+    }
+
+    // 표면 hit 정보를 루트 위치로 바꾼다.
+    public Vector3 GetRootPositionForSurfaceHit(Vector3 point, Vector3 normal, float extraOffset)
+    {
+        CapsuleCollider col = ActiveCollider;
+        if (col == null) return transform.position;
+
+        Vector3 newPos = transform.position;
+        float radius = GetColliderRadiusWorld(col);
+        float halfH = GetColliderHeightWorld(col) * 0.5f;
+        float centerY = GetColliderCenterRootLocal(col).y;
+
+        if (normal.y > 0.7f)
+        {
+            newPos.x = point.x;
+            newPos.z = point.z;
+            newPos.y = point.y + (halfH - centerY) + extraOffset;
+        }
+        else if (normal.y < -0.7f)
+        {
+            newPos.x = point.x;
+            newPos.z = point.z;
+            newPos.y = point.y - (centerY + halfH) - extraOffset;
+        }
+        else
+        {
+            newPos.x = point.x;
+            newPos.z = point.z;
+            newPos.y = point.y + (halfH - centerY);
+            newPos += normal.normalized * (radius + extraOffset);
+        }
+
+        return newPos;
+    }
+
+    public float GetActiveRadiusWorld()
+    {
+        CapsuleCollider col = ActiveCollider;
+        return col != null ? GetColliderRadiusWorld(col) : 0.35f;
+    }
+
+    public float GetActiveHeightWorld()
+    {
+        CapsuleCollider col = ActiveCollider;
+        return col != null ? GetColliderHeightWorld(col) : 2f;
+    }
+
+    public Vector3 GetActiveCenterWorld()
+    {
+        CapsuleCollider col = ActiveCollider;
+        if (col == null) return transform.position;
+        return col.transform.TransformPoint(col.center);
+    }
+
+    public Vector3 GetActiveCenterRootLocal()
+    {
+        CapsuleCollider col = ActiveCollider;
+        if (col == null) return Vector3.zero;
+        return GetColliderCenterRootLocal(col);
+    }
+
+    public float GetActiveMargin(float factor = 0.9f)
+    {
+        return GetActiveRadiusWorld() * factor;
+    }
+
+    Vector3 GetColliderCenterRootLocal(CapsuleCollider col)
+    {
+        Vector3 worldCenter = col.transform.TransformPoint(col.center);
+        return transform.InverseTransformPoint(worldCenter);
+    }
+
+    float GetColliderHeightWorld(CapsuleCollider col)
+    {
+        Vector3 scale = col.transform.lossyScale;
+        return col.height * Mathf.Abs(scale.y);
+    }
+
+    float GetColliderRadiusWorld(CapsuleCollider col)
+    {
+        Vector3 scale = col.transform.lossyScale;
+        float radiusScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+        return col.radius * radiusScale;
     }
 }

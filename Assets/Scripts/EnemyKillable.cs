@@ -3,15 +3,12 @@ using UnityEngine;
 public class EnemyKillable : MonoBehaviour
 {
     [Header("Assassination")]
-    public bool canBeAssassinated = true; // ³ªÁß¿¡ º¸½º/Æ¯¼ö ÀûÀº false·Î µÎ°í Á¶°Ç ±¸Çö °¡´É
+    public bool canBeAssassinated = true;
 
+    // í˜„ìž¬ëŠ” ë¹„í™œì„±í™”ë¡œ ì¦‰ì‹œ ì œê±°í•œë‹¤.
     public void KillByAssassination()
     {
         if (!canBeAssassinated) return;
-
-        // TODO: Enemy death animation / VFX / SFX (¿øÇÏ½Ã¸é ¿©±â¿¡¼­ Æ®¸®°Å)
-        // TODO: Drop items / score / etc.
-
-        gameObject.SetActive(false); // ÇöÀç ´Ü°è: "»ç¶óÁü"
+        gameObject.SetActive(false);
     }
 }
