@@ -155,13 +155,15 @@ public class EnemyController : MonoBehaviour
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
         if (!config) return;
-        if (!hit.collider || !hit.collider.CompareTag(playerTag)) return;
+        if (!hit.collider) return;
         if (Time.time - lastDamageTime < config.contactDamageCooldown) return;
 
-        lastDamageTime = Time.time;
+        PlayerHealth hp = hit.collider.GetComponentInParent<PlayerHealth>();
+        if (hp == null) return;
 
-        PlayerHealth hp = hit.collider.GetComponent<PlayerHealth>();
-        if (hp != null)
-            hp.TakeDamage(config.contactDamagePips);
+        if (!hp.CompareTag(playerTag)) return;
+
+        lastDamageTime = Time.time;
+        hp.TakeDamage(config.contactDamagePips);
     }
 }
