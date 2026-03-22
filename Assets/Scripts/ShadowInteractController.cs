@@ -8,8 +8,8 @@ public class ShadowInteractController : MonoBehaviour
     public LayerMask occluderMask;
     public LayerMask surfaceMask;
 
-    [Header("Directional Light")]
-    public Light sun;
+    [Header("Gameplay Lights")]
+    public Light[] gameplayLights;
 
     [Header("Indicator")]
     public GameObject shadowIndicator;
@@ -289,7 +289,17 @@ public class ShadowInteractController : MonoBehaviour
     // 표면의 한 점이 그림자인지 검사한다.
     public bool IsShadowAtPoint(Vector3 point, Vector3 normal)
     {
-        return ShadowQuery.IsPointInShadow(point, normal, sun, occluderMask, maxDirDistance: maxDirDistance);
+        if (gameplayLights != null && gameplayLights.Length > 0)
+        {
+            return ShadowQuery.IsPointInShadow(
+                point,
+                normal,
+                gameplayLights,
+                occluderMask,
+                maxDirDistance: maxDirDistance
+            );
+        }
+        return false;
     }
 
     public bool IsShadowSafeAtWorldPos(Vector3 worldPos, float margin)
