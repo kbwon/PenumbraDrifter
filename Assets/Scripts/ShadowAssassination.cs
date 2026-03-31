@@ -2,111 +2,95 @@ using UnityEngine;
 
 public class ShadowAssassination : MonoBehaviour
 {
-    public static bool IsPointInShadow(
-        Vector3 point,
-        Vector3 normal,
-        Light light,
-        LayerMask occluderMask,
-        float eps = 0.03f,
-        float maxDirDistance = 80f)
+    public ShadowInteractController shadowCtrl;
+    public KeyCode assassinateKey = KeyCode.Space;
+
+    [Header("Tuning")]
+    public float maxAssassinateDistance = 2.5f;
+    public LayerMask enemyMask;
+
+    public Animator anim;
+
+    // 주변 적을 담아둘 배열이다.
+    readonly Collider[] overlapResults = new Collider[16];
+
+    void Awake()
     {
-        if (!IsUsableLight(light)) return false;
-
-        Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
-        Vector3 origin = point + safeNormal * eps;
-
-        return !IsLitByLight(origin, light, occluderMask, maxDirDistance);
+        // 필요한 참조를 자동으로 가져온다.
+        if (!shadowCtrl) shadowCtrl = GetComponent<ShadowInteractController>();
+        if (!anim) anim = GetComponentInChildren<Animator>();
     }
 
-    public static bool IsPointInShadow(
-        Vector3 point,
-        Vector3 normal,
-        Light[] lights,
-        LayerMask occluderMask,
-        float eps = 0.03f,
-        float maxDirDistance = 80f)
+    void Update()
     {
-        if (lights == null || lights.Length == 0) return false;
+        // 그림자 모드일 때만 그림자 암살을 사용할 수 있다.
+        if (!shadowCtrl) return;
+        if (!shadowCtrl.IsInShadowMode) return;
 
-        Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
-        Vector3 origin = point + safeNormal * eps;
+        // 공격 키를 누른 순간만 처리한다.
+        if (!Input.GetKeyDown(assassinateKey)) return;
 
-        bool hasValidLight = false;
+        // 적이 없어도 공격 동작은 실행한다.
+        if (anim != null)
+            anim.SetTrigger("attack");
 
-        for (int i = 0; i < lights.Length; i++)
-        {
-            Light light = lights[i];
-            if (!IsUsableLight(light)) continue;
+        // 주변에서 암살 가능한 가장 가까운 적을 찾는다.
+        EnemyController target = FindNearbyEnemy();
+        if (target == null) return;
 
-            hasValidLight = true;
-
-            // 하나라도 직접 비추면 그림자가 아님
-            if (IsLitByLight(origin, light, occluderMask, maxDirDistance))
-                return false;
-        }
-
-        // 유효 광원이 있고, 그 어떤 광원도 직접 비추지 못하면 그림자
-        return hasValidLight;
+        // 적이 가까이에 있으면 즉시 처치한다.
+        target.KillByAssassination();
     }
 
-    static bool IsUsableLight(Light light)
+    EnemyController FindNearbyEnemy()
     {
-        if (light == null || !light.isActiveAndEnabled) return false;
-        if (light.shadows == LightShadows.None) return false;
-        if (light.intensity <= 0f) return false;
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            maxAssassinateDistance,
+            overlapResults,
+            enemyMask,
+            QueryTriggerInteraction.Collide
+        );
 
-        switch (light.type)
+        EnemyController closest = null;
+        float bestDistSqr = maxAssassinateDistance * maxAssassinateDistance;
+
+        Vector3 myPos = transform.position;
+        myPos.y = 0f;
+
+        for (int i = 0; i < hitCount; i++)
         {
-            case LightType.Directional:
-            case LightType.Point:
-            case LightType.Spot:
-                return true;
-            default:
-                return false;
+            Collider hitCol = overlapResults[i];
+            if (!hitCol) continue;
+
+            // 자식 콜라이더에 닿아도 부모 EnemyController를 찾는다.
+            EnemyController enemy = hitCol.GetComponentInParent<EnemyController>();
+            if (enemy == null) continue;
+
+            // 비활성화된 적은 제외한다.
+            if (!enemy.gameObject.activeInHierarchy) continue;
+
+            // 설정이 없거나 암살 불가 적이면 제외한다.
+            if (enemy.config == null) continue;
+            if (!enemy.config.canBeAssassinated) continue;
+
+            Vector3 enemyPos = enemy.transform.position;
+            enemyPos.y = 0f;
+
+            float distSqr = (enemyPos - myPos).sqrMagnitude;
+            if (distSqr > bestDistSqr) continue;
+
+            closest = enemy;
+            bestDistSqr = distSqr;
         }
+
+        return closest;
     }
 
-    static bool IsLitByLight(
-        Vector3 origin,
-        Light light,
-        LayerMask occluderMask,
-        float maxDirDistance)
+    void OnDrawGizmosSelected()
     {
-        switch (light.type)
-        {
-            case LightType.Directional:
-                {
-                    Vector3 toLight = -light.transform.forward.normalized;
-                    return !Physics.Raycast(origin, toLight, maxDirDistance, occluderMask, QueryTriggerInteraction.Ignore);
-                }
-
-            case LightType.Point:
-                {
-                    Vector3 toLightVec = light.transform.position - origin;
-                    float dist = toLightVec.magnitude;
-                    if (dist <= 0.0001f || dist > light.range) return false;
-
-                    Vector3 dir = toLightVec / dist;
-                    return !Physics.Raycast(origin, dir, dist, occluderMask, QueryTriggerInteraction.Ignore);
-                }
-
-            case LightType.Spot:
-                {
-                    Vector3 toLightVec = light.transform.position - origin;
-                    float dist = toLightVec.magnitude;
-                    if (dist <= 0.0001f || dist > light.range) return false;
-
-                    Vector3 lightToPoint = -toLightVec / dist;
-                    float cosHalf = Mathf.Cos(light.spotAngle * 0.5f * Mathf.Deg2Rad);
-                    float cosAng = Vector3.Dot(light.transform.forward.normalized, lightToPoint);
-                    if (cosAng < cosHalf) return false;
-
-                    Vector3 dir = toLightVec / dist;
-                    return !Physics.Raycast(origin, dir, dist, occluderMask, QueryTriggerInteraction.Ignore);
-                }
-
-            default:
-                return false;
-        }
+        // 암살 가능 범위를 Scene 뷰에서 확인한다.
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, maxAssassinateDistance);
     }
 }

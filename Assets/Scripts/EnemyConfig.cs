@@ -23,4 +23,7 @@ public class EnemyConfig : ScriptableObject
 
     [Header("Chase Loss")]
     public float loseChaseAfterNotSeenSeconds = 1.0f;
+
+    [Header("Assassination")]
+    public bool canBeAssassinated = true;     // 이 적이 암살 가능한지 여부
 }

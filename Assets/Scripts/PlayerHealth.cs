@@ -46,7 +46,7 @@ public class PlayerHealth : MonoBehaviour
         currentPips = Mathf.Max(0, currentPips - damagePips);
 
         if (anim != null)
-            anim.SetBool("hurt", true);
+            anim.SetTrigger("hurt");
 
         NotifyHealthChanged();
 
@@ -84,7 +84,7 @@ public class PlayerHealth : MonoBehaviour
         isDead = true;
 
         if (anim != null)
-            anim.SetBool("die", true);
+            anim.SetTrigger("die");
 
         if (controlScriptsToDisable != null)
         {

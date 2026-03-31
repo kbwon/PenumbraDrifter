@@ -3099,10 +3099,6 @@ PrefabInstance:
       propertyPath: enemyMask.m_Bits
       value: 256
       objectReference: {fileID: 0}
-    - target: {fileID: 8308888592043223016, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
-      propertyPath: maxAssassinateDistance
-      value: 1.5
-      objectReference: {fileID: 0}
     - target: {fileID: 8874339186490177063, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4.343
@@ -3164,21 +3160,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: BaseEnemy
       objectReference: {fileID: 0}
-    - target: {fileID: 7653289330246675253, guid: 10b0da19961e9a34ca2959a7f93869e0, type: 3}
-      propertyPath: m_Layer
-      value: 8
-      objectReference: {fileID: 0}
     - target: {fileID: 8490979610616173226, guid: 10b0da19961e9a34ca2959a7f93869e0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 11.99
+      value: 10.79
       objectReference: {fileID: 0}
     - target: {fileID: 8490979610616173226, guid: 10b0da19961e9a34ca2959a7f93869e0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2
+      value: 1.8159
       objectReference: {fileID: 0}
     - target: {fileID: 8490979610616173226, guid: 10b0da19961e9a34ca2959a7f93869e0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.64
+      value: -0.33
       objectReference: {fileID: 0}
     - target: {fileID: 8490979610616173226, guid: 10b0da19961e9a34ca2959a7f93869e0, type: 3}
       propertyPath: m_LocalRotation.w

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3965427016213187948}
   - component: {fileID: 4294089732511470964}
   - component: {fileID: 2645380108360129126}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -120,7 +120,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7689242576865747621}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Vision
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -157,7 +157,6 @@ GameObject:
   - component: {fileID: 8636867090834064782}
   - component: {fileID: 1195262823170396923}
   - component: {fileID: 6990305847788353274}
-  - component: {fileID: 4836470295296135177}
   m_Layer: 7
   m_Name: BaseEnemy
   m_TagString: Untagged
@@ -294,16 +293,3 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   config: {fileID: 11400000, guid: 983246bb0332b2c439e20fd49d2882b2, type: 2}
---- !u!114 &4836470295296135177
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7653289330246675253}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8479af94fd383ba4cbb73ec3d03f3f81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyKillable
-  canBeAssassinated: 1
