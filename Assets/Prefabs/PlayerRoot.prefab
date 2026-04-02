@@ -1935,7 +1935,7 @@ MonoBehaviour:
   groundCheckDistance: 0.2
   groundMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   cam: {fileID: 0}
   visualBillboard: {fileID: 5241389562162602385}
   flipRoot: {fileID: 1320186946785893917}
@@ -1958,11 +1958,11 @@ MonoBehaviour:
     m_Bits: 64
   occluderMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 384
   surfaceMask:
     serializedVersion: 2
     m_Bits: 192
-  sun: {fileID: 0}
+  gameplayLights: []
   shadowIndicator: {fileID: 0}
   visualRoot: {fileID: 5241389562162602385}
   sinkVisualY: -2.5
@@ -1996,7 +1996,7 @@ MonoBehaviour:
     m_Bits: 64
   surfaceMask:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 448
   rayMaxDistance: 200
   cooldownSeconds: 1
   maxTeleportDistance: 0
@@ -2034,7 +2034,9 @@ MonoBehaviour:
   shadowCtrl: {fileID: 0}
   assassinateKey: 32
   maxAssassinateDistance: 2.5
-  rayEps: 0.03
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 0
   anim: {fileID: 0}
 --- !u!54 &1059151332331331994
 Rigidbody:

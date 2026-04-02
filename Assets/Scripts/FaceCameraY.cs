@@ -4,6 +4,9 @@ public class FaceCameraY : MonoBehaviour
 {
     Transform cam;
 
+    // 인트로 중에는 필요할 때만 카메라를 따라 돌게 한다.
+    bool facingLocked;
+
     void Start()
     {
         if (GameManager.Instance != null && GameManager.Instance.MainCameraTransform != null)
@@ -23,6 +26,7 @@ public class FaceCameraY : MonoBehaviour
         }
 
         if (!cam) return;
+        if (facingLocked) return;
 
         // Y축만 돌려서 캐릭터가 눕지 않게 한다.
         Vector3 toCam = cam.position - transform.position;
@@ -30,5 +34,10 @@ public class FaceCameraY : MonoBehaviour
         if (toCam.sqrMagnitude < 0.0001f) return;
 
         transform.forward = toCam.normalized;
+    }
+
+    public void SetFacingLocked(bool locked)
+    {
+        facingLocked = locked;
     }
 }

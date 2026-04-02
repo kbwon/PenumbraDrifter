@@ -28,8 +28,15 @@ public class PlayerController : MonoBehaviour
     Vector3 moveDir;
     bool isGrounded;
 
+    // 연출 중에는 플레이어 입력을 막는다.
+    bool inputLocked;
+
+    // 인트로 중에는 입력 잠금과 별개로 빌보드 회전을 따로 제어한다.
+    bool billboardLocked;
+
     public bool IsGrounded => isGrounded;
     public Vector3 MoveDirection => moveDir;
+    public bool InputLocked => inputLocked;
 
     void Awake()
     {
@@ -67,6 +74,16 @@ public class PlayerController : MonoBehaviour
         if (health != null && health.isDead)
         {
             moveInput = Vector2.zero;
+            moveDir = Vector3.zero;
+            UpdateAnim(false);
+            return;
+        }
+
+        // 연출 중에는 입력을 막고 제자리 상태를 유지한다.
+        if (inputLocked)
+        {
+            moveInput = Vector2.zero;
+            moveDir = Vector3.zero;
             UpdateAnim(false);
             return;
         }
@@ -138,6 +155,9 @@ public class PlayerController : MonoBehaviour
 
     void LateUpdate()
     {
+        // 시작 연출 중에는 필요할 때만 빌보드 방향을 갱신한다.
+        if (billboardLocked) return;
+
         // 캐릭터가 카메라를 계속 향하도록 맞춘다.
         if (visualBillboard != null && cam != null)
         {
@@ -146,6 +166,12 @@ public class PlayerController : MonoBehaviour
             if (toCam.sqrMagnitude > 0.0001f)
                 visualBillboard.forward = toCam.normalized;
         }
+    }
+
+    // 인트로 구간에 따라 빌보드 회전을 잠그거나 다시 허용한다.
+    public void SetBillboardLocked(bool locked)
+    {
+        billboardLocked = locked;
     }
 
     Vector3 BuildGroundMoveDirection(Vector2 input)
@@ -242,6 +268,26 @@ public class PlayerController : MonoBehaviour
         Vector3 scale = flipRoot.localScale;
         scale.x = Mathf.Abs(scale.x) * (faceRight ? 1f : -1f);
         flipRoot.localScale = scale;
+    }
+
+    // StageIntroDirector가 시작 연출 동안 입력을 잠근다.
+    public void SetInputLocked(bool locked)
+    {
+        inputLocked = locked;
+
+        if (!locked) return;
+
+        moveInput = Vector2.zero;
+        moveDir = Vector3.zero;
+        UpdateAnim(false);
+
+        if (rb != null)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+        }
     }
 
     void SetupRigidbody()
