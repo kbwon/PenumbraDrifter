@@ -20,6 +20,15 @@ public class PlayerController : MonoBehaviour
     [Header("Facing")]
     public bool artFacesRight = true;
 
+    [Header("Fall Respawn")]
+    public Transform respawnPoint;
+    public float fallRespawnDistance = 8f;
+    public bool updateRespawnFromGround = true;
+    public float respawnRecordMinInterval = 0.1f;
+
+    Vector3 lastSafeRespawnPos;
+    float lastRespawnRecordTime = -999f;
+
     Rigidbody rb;
     ShadowInteractController shadowCtrl;
     PlayerHealth health;
@@ -28,10 +37,7 @@ public class PlayerController : MonoBehaviour
     Vector3 moveDir;
     bool isGrounded;
 
-    // 연출 중에는 플레이어 입력을 막는다.
     bool inputLocked;
-
-    // 인트로 중에는 입력 잠금과 별개로 빌보드 회전을 따로 제어한다.
     bool billboardLocked;
 
     public bool IsGrounded => isGrounded;
@@ -66,11 +72,11 @@ public class PlayerController : MonoBehaviour
 
         SetupRigidbody();
         ApplyFlip(true);
+        lastSafeRespawnPos = respawnPoint != null ? respawnPoint.position : transform.position;
     }
 
     void Update()
     {
-        // 사망 시 입력과 이동 방향을 멈춘다.
         if (health != null && health.isDead)
         {
             moveInput = Vector2.zero;
@@ -79,7 +85,9 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 연출 중에는 입력을 막고 제자리 상태를 유지한다.
+        if (CheckFallRespawn())
+            return;
+
         if (inputLocked)
         {
             moveInput = Vector2.zero;
@@ -108,10 +116,12 @@ public class PlayerController : MonoBehaviour
         if (health != null && health.isDead)
         {
             rb.linearVelocity = Vector3.zero;
+            shadowCtrl?.ClearMovingShadowHost();
             return;
         }
 
         UpdateGroundState();
+        RecordSafeRespawnPoint();
 
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
@@ -121,62 +131,72 @@ public class PlayerController : MonoBehaviour
         {
             rb.linearVelocity = moveDir * speed;
             shadowCtrl.SnapToAnchoredSurface(rb);
+            shadowCtrl.ClearMovingShadowHost();
+            return;
+        }
+
+        Vector3 horizontalVelocity = moveDir * speed;
+        float y = rb.linearVelocity.y;
+
+        if (inShadow && shadowCtrl != null)
+        {
+            float margin = shadowCtrl.GetActiveMargin(0.9f);
+
+            bool hasHostOrGrace = shadowCtrl.RefreshMovingShadowHost(rb.position, margin);
+            Vector3 hostDelta = shadowCtrl.ConsumeMovingShadowHostDelta();
+            hostDelta.y = 0f;
+
+            Vector3 basePos = rb.position + hostDelta;
+            bool baseSafe = shadowCtrl.IsShadowSafeAtWorldPos(basePos, margin);
+
+            if (!baseSafe && !hasHostOrGrace)
+            {
+                shadowCtrl.ForceExitShadowMode();
+                rb.linearVelocity = Vector3.zero;
+                return;
+            }
+
+            Vector3 inputDelta = Vector3.zero;
+
+            if (baseSafe)
+            {
+                Vector3 desiredInputDelta = horizontalVelocity * Time.fixedDeltaTime;
+                inputDelta = ClampDeltaToShadow(basePos, desiredInputDelta, margin);
+            }
+
+            Vector3 finalDelta = hostDelta + inputDelta;
+            Vector3 predictedPos = rb.position + finalDelta;
+
+            if (!shadowCtrl.IsShadowSafeAtWorldPos(predictedPos, margin) && !hasHostOrGrace)
+            {
+                shadowCtrl.ForceExitShadowMode();
+                rb.linearVelocity = Vector3.zero;
+                return;
+            }
+
+            rb.linearVelocity = new Vector3(
+                finalDelta.x / Time.fixedDeltaTime,
+                0f,
+                finalDelta.z / Time.fixedDeltaTime);
         }
         else
         {
-            Vector3 horizontalVelocity = moveDir * speed;
-            float y = rb.linearVelocity.y;
+            shadowCtrl?.ClearMovingShadowHost();
 
-            if (inShadow && shadowCtrl != null)
-            {
-                y = 0f;
+            if (isGrounded && y < 0f)
+                y = groundedStickVelocity;
 
-                float margin = shadowCtrl.GetActiveMargin(0.9f);
-                float searchRadius =
-                    shadowCtrl.GetActiveRadiusWorld() * 1.5f +
-                    speed * Time.fixedDeltaTime * 2f;
+            y += gravity * Time.fixedDeltaTime;
+            y = Mathf.Max(y, maxFallSpeed);
 
-                // 1) 그림자 자체가 움직여서 현재 위치가 unsafe가 된 경우
-                //    근처의 새로운 safe 위치로 먼저 붙여 준다.
-                if (!shadowCtrl.IsShadowSafeAtWorldPos(rb.position, margin))
-                {
-                    if (TrySnapToNearbyShadow(rb.position, margin, searchRadius, out Vector3 snappedPos))
-                    {
-                        rb.position = snappedPos;
-                    }
-                    else
-                    {
-                        shadowCtrl.ForceExitShadowMode();
-                        rb.linearVelocity = Vector3.zero;
-                        return;
-                    }
-                }
-
-                // 2) 입력으로 경계 밖으로 나가려는 경우는 벽처럼 막는다.
-                Vector3 desiredDelta = horizontalVelocity * Time.fixedDeltaTime;
-                Vector3 resolvedDelta = ClampDeltaToShadow(rb.position, desiredDelta, margin);
-
-                rb.linearVelocity = resolvedDelta / Time.fixedDeltaTime;
-            }
-            else
-            {
-                if (isGrounded && y < 0f)
-                    y = groundedStickVelocity;
-
-                y += gravity * Time.fixedDeltaTime;
-                y = Mathf.Max(y, maxFallSpeed);
-
-                rb.linearVelocity = new Vector3(horizontalVelocity.x, y, horizontalVelocity.z);
-            }
+            rb.linearVelocity = new Vector3(horizontalVelocity.x, y, horizontalVelocity.z);
         }
     }
 
     void LateUpdate()
     {
-        // 시작 연출 중에는 필요할 때만 빌보드 방향을 갱신한다.
         if (billboardLocked) return;
 
-        // 캐릭터가 카메라를 계속 향하도록 맞춘다.
         if (visualBillboard != null && cam != null)
         {
             Vector3 toCam = cam.position - visualBillboard.position;
@@ -186,7 +206,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // 인트로 구간에 따라 빌보드 회전을 잠그거나 다시 허용한다.
     public void SetBillboardLocked(bool locked)
     {
         billboardLocked = locked;
@@ -211,7 +230,6 @@ public class PlayerController : MonoBehaviour
         if (input.sqrMagnitude <= 0.0001f)
             return Vector3.zero;
 
-        // 벽 이동은 카메라 오른쪽과 월드 위쪽을 표면에 투영해 사용한다.
         Vector3 rightOnSurface = cam ? cam.right : Vector3.right;
         rightOnSurface = rightOnSurface - Vector3.Dot(rightOnSurface, surfaceNormal) * surfaceNormal;
         if (rightOnSurface.sqrMagnitude < 0.0001f)
@@ -295,16 +313,13 @@ public class PlayerController : MonoBehaviour
         if (desiredDelta.sqrMagnitude <= 0.0000001f)
             return Vector3.zero;
 
-        // 목표 위치가 안전하면 그대로 이동
         if (shadowCtrl.IsShadowSafeAtWorldPos(startPos + desiredDelta, margin))
             return desiredDelta;
 
-        // 먼저 전체 방향으로 최대한 갈 수 있는 지점 찾기
         Vector3 clamped = BinarySearchSafeDelta(startPos, desiredDelta, margin);
         if (clamped.sqrMagnitude > 0.0000001f)
             return clamped;
 
-        // 전체 이동이 안 되면 축 분리로 약간의 슬라이드 허용
         Vector3 xOnly = BinarySearchSafeDelta(startPos, new Vector3(desiredDelta.x, 0f, 0f), margin);
         Vector3 zOnly = BinarySearchSafeDelta(startPos, new Vector3(0f, 0f, desiredDelta.z), margin);
 
@@ -327,51 +342,69 @@ public class PlayerController : MonoBehaviour
                 hi = mid;
         }
 
-        // 경계에 너무 딱 붙지 않도록 아주 조금 안쪽으로
         float safeT = Mathf.Max(0f, lo - 0.02f);
         return desiredDelta * safeT;
     }
 
-    bool TrySnapToNearbyShadow(Vector3 startPos, float margin, float searchRadius, out Vector3 snappedPos)
+    bool CheckFallRespawn()
     {
-        snappedPos = startPos;
+        float minY = lastSafeRespawnPos.y - Mathf.Abs(fallRespawnDistance);
+        if (transform.position.y > minY)
+            return false;
 
-        if (shadowCtrl.IsShadowSafeAtWorldPos(startPos, margin))
-            return true;
-
-        float bestDistSqr = float.MaxValue;
-        bool found = false;
-
-        const int rings = 3;
-        const int samplesPerRing = 16;
-
-        for (int ring = 1; ring <= rings; ring++)
-        {
-            float r = searchRadius * ring / rings;
-
-            for (int i = 0; i < samplesPerRing; i++)
-            {
-                float angle = (Mathf.PI * 2f * i) / samplesPerRing;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * r;
-                Vector3 candidate = startPos + offset;
-
-                if (!shadowCtrl.IsShadowSafeAtWorldPos(candidate, margin))
-                    continue;
-
-                float d = (candidate - startPos).sqrMagnitude;
-                if (d < bestDistSqr)
-                {
-                    bestDistSqr = d;
-                    snappedPos = candidate;
-                    found = true;
-                }
-            }
-        }
-
-        return found;
+        RespawnToSafePoint();
+        return true;
     }
 
-    // StageIntroDirector가 시작 연출 동안 입력을 잠근다.
+    void RecordSafeRespawnPoint()
+    {
+        if (!updateRespawnFromGround)
+            return;
+
+        if (!isGrounded)
+            return;
+
+        if (Time.time - lastRespawnRecordTime < respawnRecordMinInterval)
+            return;
+
+        // 너무 빠르게 떨어지거나 점프 중인 찰나는 저장하지 않도록 약하게 제한
+        if (rb != null && Mathf.Abs(rb.linearVelocity.y) > 1f)
+            return;
+
+        lastRespawnRecordTime = Time.time;
+
+        if (respawnPoint != null)
+        {
+            lastSafeRespawnPos = respawnPoint.position;
+            return;
+        }
+
+        lastSafeRespawnPos = transform.position;
+    }
+
+    void RespawnToSafePoint()
+    {
+        Vector3 targetPos = respawnPoint != null ? respawnPoint.position : lastSafeRespawnPos;
+
+        if (shadowCtrl != null)
+        {
+            shadowCtrl.ForceExitShadowMode();
+            shadowCtrl.ClearSurfaceAnchor();
+
+            // 이전에 제가 드린 moving shadow host 버전을 쓰는 경우만 필요
+            // 현재 ShadowInteractController에 이 메서드가 없으면 이 줄은 빼세요.
+            // shadowCtrl.ClearMovingShadowHost();
+        }
+
+        moveInput = Vector2.zero;
+        moveDir = Vector3.zero;
+        UpdateAnim(false);
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.position = targetPos;
+    }
+
     public void SetInputLocked(bool locked)
     {
         inputLocked = locked;
@@ -381,6 +414,7 @@ public class PlayerController : MonoBehaviour
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
         UpdateAnim(false);
+        shadowCtrl?.ClearMovingShadowHost();
 
         if (rb != null)
         {

@@ -18,7 +18,7 @@ MonoBehaviour:
   loseSightGrace: 0.2
   moveSpeed: 2.5
   returnSpeed: 2
-  stopDistance: 1
+  stopDistance: 2
   waitAfterLost: 1
   contactDamagePips: 1
   contactDamageCooldown: 0.6
