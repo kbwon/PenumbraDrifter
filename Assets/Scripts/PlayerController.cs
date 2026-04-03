@@ -119,7 +119,6 @@ public class PlayerController : MonoBehaviour
 
         if (anchored)
         {
-            // 벽과 천장에서는 표면 기준으로만 이동한다.
             rb.linearVelocity = moveDir * speed;
             shadowCtrl.SnapToAnchoredSurface(rb);
         }
@@ -128,9 +127,36 @@ public class PlayerController : MonoBehaviour
             Vector3 horizontalVelocity = moveDir * speed;
             float y = rb.linearVelocity.y;
 
-            if (inShadow)
+            if (inShadow && shadowCtrl != null)
             {
                 y = 0f;
+
+                float margin = shadowCtrl.GetActiveMargin(0.9f);
+                float searchRadius =
+                    shadowCtrl.GetActiveRadiusWorld() * 1.5f +
+                    speed * Time.fixedDeltaTime * 2f;
+
+                // 1) 그림자 자체가 움직여서 현재 위치가 unsafe가 된 경우
+                //    근처의 새로운 safe 위치로 먼저 붙여 준다.
+                if (!shadowCtrl.IsShadowSafeAtWorldPos(rb.position, margin))
+                {
+                    if (TrySnapToNearbyShadow(rb.position, margin, searchRadius, out Vector3 snappedPos))
+                    {
+                        rb.position = snappedPos;
+                    }
+                    else
+                    {
+                        shadowCtrl.ForceExitShadowMode();
+                        rb.linearVelocity = Vector3.zero;
+                        return;
+                    }
+                }
+
+                // 2) 입력으로 경계 밖으로 나가려는 경우는 벽처럼 막는다.
+                Vector3 desiredDelta = horizontalVelocity * Time.fixedDeltaTime;
+                Vector3 resolvedDelta = ClampDeltaToShadow(rb.position, desiredDelta, margin);
+
+                rb.linearVelocity = resolvedDelta / Time.fixedDeltaTime;
             }
             else
             {
@@ -139,17 +165,9 @@ public class PlayerController : MonoBehaviour
 
                 y += gravity * Time.fixedDeltaTime;
                 y = Mathf.Max(y, maxFallSpeed);
+
+                rb.linearVelocity = new Vector3(horizontalVelocity.x, y, horizontalVelocity.z);
             }
-
-            rb.linearVelocity = new Vector3(horizontalVelocity.x, y, horizontalVelocity.z);
-        }
-
-        // 그림자 모드에서는 항상 안전한 그림자 안에 있는지 확인한다.
-        if (inShadow && shadowCtrl != null)
-        {
-            float margin = shadowCtrl.GetActiveMargin(0.9f);
-            if (!shadowCtrl.IsShadowSafeAtWorldPos(rb.position, margin))
-                shadowCtrl.ForceExitShadowMode();
         }
     }
 
@@ -268,6 +286,89 @@ public class PlayerController : MonoBehaviour
         Vector3 scale = flipRoot.localScale;
         scale.x = Mathf.Abs(scale.x) * (faceRight ? 1f : -1f);
         flipRoot.localScale = scale;
+    }
+
+    Vector3 ClampDeltaToShadow(Vector3 startPos, Vector3 desiredDelta, float margin)
+    {
+        desiredDelta.y = 0f;
+
+        if (desiredDelta.sqrMagnitude <= 0.0000001f)
+            return Vector3.zero;
+
+        // 목표 위치가 안전하면 그대로 이동
+        if (shadowCtrl.IsShadowSafeAtWorldPos(startPos + desiredDelta, margin))
+            return desiredDelta;
+
+        // 먼저 전체 방향으로 최대한 갈 수 있는 지점 찾기
+        Vector3 clamped = BinarySearchSafeDelta(startPos, desiredDelta, margin);
+        if (clamped.sqrMagnitude > 0.0000001f)
+            return clamped;
+
+        // 전체 이동이 안 되면 축 분리로 약간의 슬라이드 허용
+        Vector3 xOnly = BinarySearchSafeDelta(startPos, new Vector3(desiredDelta.x, 0f, 0f), margin);
+        Vector3 zOnly = BinarySearchSafeDelta(startPos, new Vector3(0f, 0f, desiredDelta.z), margin);
+
+        return xOnly.sqrMagnitude >= zOnly.sqrMagnitude ? xOnly : zOnly;
+    }
+
+    Vector3 BinarySearchSafeDelta(Vector3 startPos, Vector3 desiredDelta, float margin)
+    {
+        float lo = 0f;
+        float hi = 1f;
+
+        for (int i = 0; i < 10; i++)
+        {
+            float mid = (lo + hi) * 0.5f;
+            Vector3 testPos = startPos + desiredDelta * mid;
+
+            if (shadowCtrl.IsShadowSafeAtWorldPos(testPos, margin))
+                lo = mid;
+            else
+                hi = mid;
+        }
+
+        // 경계에 너무 딱 붙지 않도록 아주 조금 안쪽으로
+        float safeT = Mathf.Max(0f, lo - 0.02f);
+        return desiredDelta * safeT;
+    }
+
+    bool TrySnapToNearbyShadow(Vector3 startPos, float margin, float searchRadius, out Vector3 snappedPos)
+    {
+        snappedPos = startPos;
+
+        if (shadowCtrl.IsShadowSafeAtWorldPos(startPos, margin))
+            return true;
+
+        float bestDistSqr = float.MaxValue;
+        bool found = false;
+
+        const int rings = 3;
+        const int samplesPerRing = 16;
+
+        for (int ring = 1; ring <= rings; ring++)
+        {
+            float r = searchRadius * ring / rings;
+
+            for (int i = 0; i < samplesPerRing; i++)
+            {
+                float angle = (Mathf.PI * 2f * i) / samplesPerRing;
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * r;
+                Vector3 candidate = startPos + offset;
+
+                if (!shadowCtrl.IsShadowSafeAtWorldPos(candidate, margin))
+                    continue;
+
+                float d = (candidate - startPos).sqrMagnitude;
+                if (d < bestDistSqr)
+                {
+                    bestDistSqr = d;
+                    snappedPos = candidate;
+                    found = true;
+                }
+            }
+        }
+
+        return found;
     }
 
     // StageIntroDirector가 시작 연출 동안 입력을 잠근다.
