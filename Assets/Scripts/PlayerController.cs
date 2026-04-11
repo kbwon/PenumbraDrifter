@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
@@ -81,7 +82,7 @@ public class PlayerController : MonoBehaviour
         {
             moveInput = Vector2.zero;
             moveDir = Vector3.zero;
-            UpdateAnim(false);
+            UpdateAnim(false, false);
             return;
         }
 
@@ -92,7 +93,7 @@ public class PlayerController : MonoBehaviour
         {
             moveInput = Vector2.zero;
             moveDir = Vector3.zero;
-            UpdateAnim(false);
+            UpdateAnim(false, false);
             return;
         }
 
@@ -106,8 +107,8 @@ public class PlayerController : MonoBehaviour
             ? BuildAnchoredMoveDirection(moveInput, shadowCtrl.AnchorNormal.normalized)
             : BuildGroundMoveDirection(moveInput);
 
-        bool isRun = moveDir.sqrMagnitude > 0.0001f;
-        UpdateAnim(isRun);
+        bool isMoving = moveDir.sqrMagnitude > 0.0001f;
+        UpdateAnim(isMoving, inShadow);
         UpdateFlip(moveDir);
     }
 
@@ -275,10 +276,13 @@ public class PlayerController : MonoBehaviour
             QueryTriggerInteraction.Ignore);
     }
 
-    void UpdateAnim(bool isRun)
+    void UpdateAnim(bool isMoving, bool inShadow)
     {
-        if (anim != null)
-            anim.SetBool("isRun", isRun);
+        if (anim != null) return;
+        anim.SetBool("isRun", !inShadow && isMoving);
+        anim.SetBool("isIdle", !inShadow && !isMoving);
+        anim.SetBool("isShadowWalk", inShadow && isMoving);
+        anim.SetBool("ShadowIdle", inShadow && !isMoving);
     }
 
     void UpdateFlip(Vector3 dir)
@@ -398,7 +402,7 @@ public class PlayerController : MonoBehaviour
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
-        UpdateAnim(false);
+        UpdateAnim(false, false);
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -413,7 +417,7 @@ public class PlayerController : MonoBehaviour
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
-        UpdateAnim(false);
+        UpdateAnim(false, false);
         shadowCtrl?.ClearMovingShadowHost();
 
         if (rb != null)

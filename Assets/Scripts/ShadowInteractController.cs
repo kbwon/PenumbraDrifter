@@ -19,6 +19,7 @@ public class ShadowInteractController : MonoBehaviour
     public float sinkVisualY = -0.35f;
     public float shadowSpeedMul = 0.6f;
     public float maxDirDistance = 80f;
+    public Animator anim;
 
     [Header("Shadow Gauge")]
     public float drainFullSeconds = 5f;
@@ -103,6 +104,9 @@ public class ShadowInteractController : MonoBehaviour
         if (surfaceMask.value == 0)
             surfaceMask = groundMask;
 
+        if (anim == null)
+            anim = GetComponentInChildren<Animator>();
+
         ApplyColliderMode(false);
         ClearMovingShadowHost();
         NotifyGaugeChanged(true);
@@ -134,10 +138,14 @@ public class ShadowInteractController : MonoBehaviour
             if (!inShadowMode)
             {
                 if (onShadow && gauge01 > 0f)
+                {
+                    anim.SetBool("isShadow", IsInShadowMode);
                     EnterShadowMode();
+                }
             }
             else
             {
+                anim.SetBool("isShadow", !IsInShadowMode);
                 ExitShadowMode();
             }
         }
