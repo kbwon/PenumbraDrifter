@@ -278,7 +278,7 @@ public class PlayerController : MonoBehaviour
 
     void UpdateAnim(bool isMoving, bool inShadow)
     {
-        if (anim != null) return;
+        if (anim == null) return;
         anim.SetBool("isRun", !inShadow && isMoving);
         anim.SetBool("Idle", !inShadow && !isMoving);
         anim.SetBool("isShadowWalk", inShadow && isMoving);
