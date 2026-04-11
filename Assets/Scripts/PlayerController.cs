@@ -41,6 +41,9 @@ public class PlayerController : MonoBehaviour
     bool inputLocked;
     bool billboardLocked;
 
+    bool isShadowTransitionPlaying;
+    bool prevInShadow;
+
     public bool IsGrounded => isGrounded;
     public Vector3 MoveDirection => moveDir;
     public bool InputLocked => inputLocked;
@@ -74,6 +77,7 @@ public class PlayerController : MonoBehaviour
         SetupRigidbody();
         ApplyFlip(true);
         lastSafeRespawnPos = respawnPoint != null ? respawnPoint.position : transform.position;
+        prevInShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
     }
 
     void Update()
@@ -89,6 +93,22 @@ public class PlayerController : MonoBehaviour
         if (CheckFallRespawn())
             return;
 
+        bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+
+        if (inShadow != prevInShadow)
+        {
+            BeginShadowTransition(inShadow);
+            prevInShadow = inShadow;
+            return;
+        }
+
+        if (isShadowTransitionPlaying)
+        {
+            moveInput = Vector2.zero;
+            moveDir = Vector3.zero;
+            return;
+        }
+
         if (inputLocked)
         {
             moveInput = Vector2.zero;
@@ -100,7 +120,6 @@ public class PlayerController : MonoBehaviour
         moveInput.x = Input.GetAxisRaw("Horizontal");
         moveInput.y = Input.GetAxisRaw("Vertical");
 
-        bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
 
         moveDir = anchored
@@ -117,6 +136,17 @@ public class PlayerController : MonoBehaviour
         if (health != null && health.isDead)
         {
             rb.linearVelocity = Vector3.zero;
+            shadowCtrl?.ClearMovingShadowHost();
+            return;
+        }
+
+        if (isShadowTransitionPlaying)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+
             shadowCtrl?.ClearMovingShadowHost();
             return;
         }
@@ -279,12 +309,57 @@ public class PlayerController : MonoBehaviour
     void UpdateAnim(bool isMoving, bool inShadow)
     {
         if (anim == null) return;
+        if (isShadowTransitionPlaying) return;
         anim.SetBool("isRun", !inShadow && isMoving);
         anim.SetBool("Idle", !inShadow && !isMoving);
         anim.SetBool("isShadowWalk", inShadow && isMoving);
         anim.SetBool("ShadowIdle", inShadow && !isMoving);
     }
 
+
+    public void BeginShadowTransition(bool nowInShadow)
+    {
+        if (anim == null) return;
+
+        isShadowTransitionPlaying = true;
+        SetInputLocked(true);
+
+        moveInput = Vector2.zero;
+        moveDir = Vector3.zero;
+
+        if (rb != null)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+        }
+
+        // 이동 관련 애니메이션 끄기
+        anim.SetBool("isRun", false);
+        anim.SetBool("isShadowWalk", false);
+
+        // 현재 Animator 조건 유지
+        if (nowInShadow)
+        {
+            // 그림자 모드 진입 애니메이션
+            anim.SetBool("Idle", false);
+            anim.SetBool("ShadowIdle", true);
+        }
+        else
+        {
+            // 그림자 모드 해제 애니메이션
+            anim.SetBool("ShadowIdle", false);
+            anim.SetBool("Idle", true);
+        }
+    }
+
+    public void EndShadowTransition()
+    {
+        Debug.Log("EndShadowTransition called");
+        isShadowTransitionPlaying = false;
+        SetInputLocked(false);
+    }
     void UpdateFlip(Vector3 dir)
     {
         if (dir.sqrMagnitude < 0.0001f) return;

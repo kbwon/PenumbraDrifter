@@ -6424,7 +6424,7 @@ PrefabInstance:
       objectReference: {fileID: 403353767}
     - target: {fileID: 2514819035944079756, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: moveSpeed
-      value: 10
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 2514819035944079756, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: artFacesRight
