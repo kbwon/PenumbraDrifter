@@ -139,13 +139,13 @@ public class ShadowInteractController : MonoBehaviour
             {
                 if (onShadow && gauge01 > 0f)
                 {
-                    anim.SetBool("isShadow", IsInShadowMode);
+                    //anim.SetBool("isShadow", IsInShadowMode);
                     EnterShadowMode();
                 }
             }
             else
             {
-                anim.SetBool("isShadow", !IsInShadowMode);
+                //anim.SetBool("isShadow", !IsInShadowMode);
                 ExitShadowMode();
             }
         }
