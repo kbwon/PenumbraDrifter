@@ -6456,7 +6456,7 @@ PrefabInstance:
       objectReference: {fileID: 1523427486}
     - target: {fileID: 5379296923985410276, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: sinkVisualY
-      value: -3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5379296923985410276, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: surfaceMask.m_Bits
