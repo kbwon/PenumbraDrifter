@@ -356,7 +356,6 @@ public class PlayerController : MonoBehaviour
 
     public void EndShadowTransition()
     {
-        Debug.Log("EndShadowTransition called");
         isShadowTransitionPlaying = false;
         SetInputLocked(false);
     }

@@ -185,6 +185,7 @@ public class EnemyController : MonoBehaviour
 
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
+        Debug.Log($"hit collider = {hit.collider.name}");
         // 설정이 없으면 처리하지 않는다.
         if (!config) return;
 
