@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61cc5e469d172a34ca0b91298198e003, type: 3}
+  m_Name: RangedEnemyConfig
+  m_EditorClassIdentifier: Assembly-CSharp::RangedEnemyConfig
+  viewDistance: 12
+  viewAngle: 90
+  detectTimeRequired: 0.5
+  loseSightGrace: 0.2
+  moveSpeed: 2.5
+  returnSpeed: 2
+  stopDistance: 6
+  waitAfterLost: 2
+  contactDamagePips: 1
+  contactDamageCooldown: 0.6
+  loseChaseAfterNotSeenSeconds: 3
+  canBeAssassinated: 1
+  attackRange: 10
+  fireCooldown: 0.8
+  projectileDamagePips: 1
+  projectileSpeed: 10
+  projectileLifeTime: 3
+  fireAfterLostSightSeconds: 1.5
