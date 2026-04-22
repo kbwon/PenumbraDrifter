@@ -3,7 +3,7 @@ using UnityEngine;
 public class ShadowAssassination : MonoBehaviour
 {
     public ShadowInteractController shadowCtrl;
-    public KeyCode assassinateKey = KeyCode.Space;
+    public KeyCode assassinateKey = KeyCode.Mouse0;
 
     [Header("Tuning")]
     public float maxAssassinateDistance = 2.5f;

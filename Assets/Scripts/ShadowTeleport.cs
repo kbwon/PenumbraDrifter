@@ -54,7 +54,7 @@ public class ShadowTeleport : MonoBehaviour
 
         if (!shadowCtrl || !cam) return;
         if (!shadowCtrl.IsInShadowMode) return;
-        if (!Input.GetMouseButtonDown(0)) return;
+        if (!Input.GetKeyDown(KeyCode.Space)) return;
         if (!IsReady) return;
         if (shadowCtrl.Gauge01 <= 0f) return;
 

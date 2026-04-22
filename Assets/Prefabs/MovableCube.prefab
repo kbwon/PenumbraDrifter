@@ -13,7 +13,8 @@ GameObject:
   - component: {fileID: 1261209439731870307}
   - component: {fileID: 8239604860288108289}
   - component: {fileID: 549686487050110743}
-  m_Layer: 7
+  - component: {fileID: 6139607418321708587}
+  m_Layer: 9
   m_Name: MovableCube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -120,9 +121,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 546709262802311736}
   serializedVersion: 5
-  m_Mass: 0.9
-  m_LinearDamping: 0.1
-  m_AngularDamping: 0.05
+  m_Mass: 10
+  m_LinearDamping: 5
+  m_AngularDamping: 1
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -138,4 +139,24 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 112
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
+--- !u!114 &6139607418321708587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 546709262802311736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d39b357d610214e47a081b00b61e5a88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PushableObject
+  rb: {fileID: 549686487050110743}
+  mainCollider: {fileID: 8239604860288108289}
+  interactDistance: 1.2
+  pushSpeed: 1.25
+  minInputMagnitude: 0.15
+  minTowardDot: 0.05
+  snapToWorldAxis: 1
+  freezeHorizontalWhenIdle: 1

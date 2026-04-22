@@ -44,9 +44,16 @@ public class PlayerController : MonoBehaviour
     bool isShadowTransitionPlaying;
     bool prevInShadow;
 
+    float externalMoveSpeedMultiplier = 1f;
+
     public bool IsGrounded => isGrounded;
     public Vector3 MoveDirection => moveDir;
     public bool InputLocked => inputLocked;
+
+    public void SetExternalMoveSpeedMultiplier(float multiplier)
+    {
+        externalMoveSpeedMultiplier = Mathf.Max(0.05f, multiplier);
+    }
 
     void Awake()
     {
@@ -156,7 +163,7 @@ public class PlayerController : MonoBehaviour
 
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
-        float speed = moveSpeed * (shadowCtrl != null ? shadowCtrl.SpeedMultiplier : 1f);
+        float speed = moveSpeed * (shadowCtrl != null ? shadowCtrl.SpeedMultiplier : 1f) * externalMoveSpeedMultiplier;
 
         if (anchored)
         {

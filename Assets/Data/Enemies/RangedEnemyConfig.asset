@@ -16,7 +16,7 @@ MonoBehaviour:
   viewAngle: 90
   detectTimeRequired: 0.5
   loseSightGrace: 0.2
-  moveSpeed: 2.5
+  moveSpeed: 0.5
   returnSpeed: 2
   stopDistance: 6
   waitAfterLost: 2
@@ -25,7 +25,7 @@ MonoBehaviour:
   loseChaseAfterNotSeenSeconds: 3
   canBeAssassinated: 1
   attackRange: 10
-  fireCooldown: 0.8
+  fireCooldown: 1.5
   projectileDamagePips: 1
   projectileSpeed: 10
   projectileLifeTime: 3
