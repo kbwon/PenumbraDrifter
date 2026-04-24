@@ -36,6 +36,7 @@ public class EnemyController : MonoBehaviour
     protected bool decayingSoundAlert;
     protected Transform currentNoiseSource;
     protected float lastNoiseAcceptTime = -999f;
+    protected float soundMoveTimer;
 
     protected float lostWaitTimer;
     protected float lastDamageTime = -999f;
@@ -220,9 +221,13 @@ public class EnemyController : MonoBehaviour
 
             if (distance > config.soundStopDistance)
             {
+                soundMoveTimer += Time.deltaTime;
+
                 FaceDirection(moveDir);
                 MoveInDirection(moveDir, config.soundMoveSpeed);
-                return;
+
+                if (soundMoveTimer < config.soundGiveUpSeconds)
+                    return;
             }
 
             // 소리 위치에 도착했다.
@@ -374,9 +379,9 @@ public class EnemyController : MonoBehaviour
         state = State.SoundAlert;
         lastHeardPos = heardPosition;
 
-        // 새 소리를 들었을 때는 조사 상태를 처음부터 시작한다.
         soundAlert01 = 0f;
         soundWaitTimer = config.soundInvestigateWait;
+        soundMoveTimer = 0f;
         reachedSoundPoint = false;
         decayingSoundAlert = false;
 

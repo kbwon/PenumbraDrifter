@@ -5447,6 +5447,7 @@ Transform:
   - {fileID: 527780611}
   - {fileID: 1973128481}
   - {fileID: 2033498639}
+  - {fileID: 1176144346}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1127964336
@@ -5644,12 +5645,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1176144342}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 38.36, y: 1.42, z: 5.78}
-  m_LocalScale: {x: 3, y: 3, z: 3}
-  m_ConstrainProportionsScale: 1
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 9.620001, y: -0.84326005, z: 11.53168}
+  m_LocalScale: {x: 2, y: 5, z: 3}
+  m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1121704747}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1176144347
 MonoBehaviour:
@@ -5664,8 +5665,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NoiseOnCollision
   noiseRadius: 10
-  minImpactSpeed: 1
-  cooldownSeconds: 0.5
+  minImpactSpeed: 2
+  cooldownSeconds: 1.5
 --- !u!1 &1197344261
 GameObject:
   m_ObjectHideFlags: 0
@@ -9439,14 +9440,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerNoiseEmitter
   player: {fileID: 1683022433}
   shadowCtrl: {fileID: 1206722595}
-  sprintKey: 304
-  crouchKey: 306
   walkNoiseRadius: 3
-  sprintNoiseRadius: 6
-  crouchNoiseRadius: 0.4
   footstepInterval: 0.35
-  objectNoiseRadius: 5
   emitNoiseInShadowMode: 0
+  emitNoiseWhileCrouching: 0
 --- !u!1001 &1699123960
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12202,6 +12199,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 403353767}
     - target: {fileID: 2514819035944079756, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
+      propertyPath: crouchKey
+      value: 304
+      objectReference: {fileID: 0}
+    - target: {fileID: 2514819035944079756, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: moveSpeed
       value: 8
       objectReference: {fileID: 0}
@@ -12307,7 +12308,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8874339186490177063, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.02
+      value: 0.31
       objectReference: {fileID: 0}
     - target: {fileID: 8874339186490177063, guid: f5b33c0e7b9b11743a8a425f412610b5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12378,4 +12379,3 @@ SceneRoots:
   - {fileID: 847645100}
   - {fileID: 285371757}
   - {fileID: 1041690630}
-  - {fileID: 1176144346}

@@ -4,7 +4,6 @@ using UnityEngine;
 public enum NoiseKind
 {
     Footstep,
-    Sprint,
     Crouch,
     Object,
     Custom

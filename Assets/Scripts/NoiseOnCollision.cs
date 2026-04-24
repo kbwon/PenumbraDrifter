@@ -3,8 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class NoiseOnCollision : MonoBehaviour
 {
-    // 충돌했을 때 소리가 나야 하는 오브젝트
-    public float noiseRadius = 5f;
+    public float noiseRadius = 8f;
     public float minImpactSpeed = 1.0f;
     public float cooldownSeconds = 0.5f;
 
@@ -12,31 +11,35 @@ public class NoiseOnCollision : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.collider.CompareTag("Player"))
-        {
-            Debug.Log("Player Noise!");
-            TryEmitNoise(collision.relativeVelocity.magnitude);
-        }        
+        TryEmitNoise(collision);
     }
 
     void OnCollisionStay(Collision collision)
     {
-        if (collision.collider.CompareTag("Player"))
-        {
-            Debug.Log("Player Noise ing!");
-            TryEmitNoise(collision.relativeVelocity.magnitude);
-        }
+        TryEmitNoise(collision);
     }
 
-    void TryEmitNoise(float impactSpeed)
+    void TryEmitNoise(Collision collision)
     {
-        if (impactSpeed < minImpactSpeed)
+        if (collision.relativeVelocity.magnitude < minImpactSpeed)
             return;
 
         if (Time.time - lastNoiseTime < cooldownSeconds)
             return;
 
         lastNoiseTime = Time.time;
-        NoiseSystem.Emit(transform.position, noiseRadius, 1f, transform, NoiseKind.Object);
+
+        Vector3 noisePos = transform.position;
+
+        if (collision.contactCount > 0)
+            noisePos = collision.GetContact(0).point;
+
+        NoiseSystem.Emit(
+            noisePos,
+            noiseRadius,
+            1f,
+            transform,
+            NoiseKind.Object
+        );
     }
 }

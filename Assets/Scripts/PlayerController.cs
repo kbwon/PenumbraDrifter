@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
     public bool artFacesRight = true;
 
     [Header("Stealth Move")]
-    public KeyCode crouchKey = KeyCode.LeftControl;
+    public KeyCode crouchKey = KeyCode.LeftShift;
     public float crouchSpeedMul = 0.55f;
     public bool IsCrouching { get; private set; }
 

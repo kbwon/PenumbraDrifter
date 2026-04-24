@@ -33,6 +33,7 @@ public class EnemyConfig : ScriptableObject
     public float soundStopDistance = 0.35f;
     public float sameNoiseIgnoreSeconds = 0.6f;
     public float sameNoiseUpdateDistance = 1.0f;
+    public float soundGiveUpSeconds = 3.0f;
 
     [Header("Damage")]
     public int contactDamagePips = 1;

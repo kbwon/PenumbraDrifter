@@ -22,14 +22,18 @@ MonoBehaviour:
   lostAlertStart01: 0.6
   moveSpeed: 2.5
   returnSpeed: 2
-  soundMoveSpeed: 2
+  soundMoveSpeed: 1.5
   stopDistance: 0.8
   turnSpeed: 10
   waitAfterLost: 1
-  hearingSensitivity: 1
+  hearingSensitivity: 2
   soundAlertFillSeconds: 0.4
+  soundAlertDecaySeconds: 1.2
   soundInvestigateWait: 1.2
-  soundStopDistance: 0.35
+  soundStopDistance: 2
+  sameNoiseIgnoreSeconds: 0.6
+  sameNoiseUpdateDistance: 1
+  soundGiveUpSeconds: 3
   contactDamagePips: 1
   contactDamageCooldown: 0.6
   loseChaseAfterNotSeenSeconds: 0.6
