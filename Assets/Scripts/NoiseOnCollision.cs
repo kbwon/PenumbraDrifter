@@ -12,12 +12,20 @@ public class NoiseOnCollision : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        TryEmitNoise(collision.relativeVelocity.magnitude);
+        if(collision.collider.CompareTag("Player"))
+        {
+            Debug.Log("Player Noise!");
+            TryEmitNoise(collision.relativeVelocity.magnitude);
+        }        
     }
 
     void OnCollisionStay(Collision collision)
     {
-        TryEmitNoise(collision.relativeVelocity.magnitude);
+        if (collision.collider.CompareTag("Player"))
+        {
+            Debug.Log("Player Noise ing!");
+            TryEmitNoise(collision.relativeVelocity.magnitude);
+        }
     }
 
     void TryEmitNoise(float impactSpeed)

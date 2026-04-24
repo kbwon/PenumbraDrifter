@@ -16,21 +16,21 @@ MonoBehaviour:
   attackViewDistance: 3
   viewAngle: 90
   targetPointYOffset: 0.8
-  detectTimeRequired: 2
-  alertDecaySeconds: 2
-  loseSightGrace: 0.5
-  lostAlertStart01: 1
+  detectTimeRequired: 1.2
+  alertDecaySeconds: 1
+  loseSightGrace: 0.2
+  lostAlertStart01: 0.6
   moveSpeed: 2.5
   returnSpeed: 2
-  soundMoveSpeed: 1.5
-  stopDistance: 2
+  soundMoveSpeed: 2
+  stopDistance: 0.8
   turnSpeed: 10
   waitAfterLost: 1
   hearingSensitivity: 1
-  soundAlertFillSeconds: 1
-  soundInvestigateWait: 2
-  soundStopDistance: 1
+  soundAlertFillSeconds: 0.4
+  soundInvestigateWait: 1.2
+  soundStopDistance: 0.35
   contactDamagePips: 1
   contactDamageCooldown: 0.6
-  loseChaseAfterNotSeenSeconds: 2
+  loseChaseAfterNotSeenSeconds: 0.6
   canBeAssassinated: 1

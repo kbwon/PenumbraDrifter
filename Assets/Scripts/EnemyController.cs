@@ -32,6 +32,10 @@ public class EnemyController : MonoBehaviour
     protected float soundAlert01;
     protected Vector3 lastHeardPos;
     protected float soundWaitTimer;
+    protected bool reachedSoundPoint;
+    protected bool decayingSoundAlert;
+    protected Transform currentNoiseSource;
+    protected float lastNoiseAcceptTime = -999f;
 
     protected float lostWaitTimer;
     protected float lastDamageTime = -999f;
@@ -187,44 +191,78 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void UpdateSoundAlertState()
     {
+        // 소리 조사 중이라도 가까운 공격 시야에 들어오면 즉시 발각된다.
         if (vision.CanSeeAttack)
         {
             EnterChaseState();
             return;
         }
 
+        // 소리 조사 중 시야 경계 범위에 들어오면 물음표가 아니라 느낌표 경계로 바뀐다.
         if (vision.CanSeeAlert)
         {
             EnterVisualAlertState(0.2f);
             return;
         }
 
-        soundAlert01 = Mathf.MoveTowards(
-            soundAlert01,
-            1f,
-            Time.deltaTime / Mathf.Max(0.01f, config.soundAlertFillSeconds)
-        );
-
         Vector3 moveDir = GetFlatDirectionTo(lastHeardPos, out float distance);
 
-        if (distance > config.soundStopDistance)
+        // 아직 소리 위치에 도착하지 않았다면 물음표를 채우면서 천천히 이동한다.
+        if (!reachedSoundPoint)
         {
-            FaceDirection(moveDir);
-            MoveInDirection(moveDir, config.soundMoveSpeed);
+            decayingSoundAlert = false;
+
+            soundAlert01 = Mathf.MoveTowards(
+                soundAlert01,
+                1f,
+                Time.deltaTime / Mathf.Max(0.01f, config.soundAlertFillSeconds)
+            );
+
+            if (distance > config.soundStopDistance)
+            {
+                FaceDirection(moveDir);
+                MoveInDirection(moveDir, config.soundMoveSpeed);
+                return;
+            }
+
+            // 소리 위치에 도착했다.
+            reachedSoundPoint = true;
+            soundWaitTimer = config.soundInvestigateWait;
+            StopMove();
             return;
         }
 
+        // 소리 위치에 도착한 뒤 잠깐 주변을 확인한다.
         StopMove();
 
         if (moveDir.sqrMagnitude > 0.0001f)
             FaceDirection(moveDir);
 
-        soundWaitTimer -= Time.deltaTime;
-
-        if (soundWaitTimer <= 0f)
+        if (!decayingSoundAlert)
         {
-            soundAlert01 = 0f;
+            soundAlert01 = Mathf.MoveTowards(
+                soundAlert01,
+                1f,
+                Time.deltaTime / Mathf.Max(0.01f, config.soundAlertFillSeconds)
+            );
 
+            soundWaitTimer -= Time.deltaTime;
+
+            if (soundWaitTimer <= 0f)
+                decayingSoundAlert = true;
+
+            return;
+        }
+
+        // 아무것도 발견하지 못했으므로 물음표가 서서히 줄어든다.
+        soundAlert01 = Mathf.MoveTowards(
+            soundAlert01,
+            0f,
+            Time.deltaTime / Mathf.Max(0.01f, config.soundAlertDecaySeconds)
+        );
+
+        if (soundAlert01 <= 0f)
+        {
             if (ShouldReturnHome())
                 EnterReturnState();
             else
@@ -304,6 +342,11 @@ public class EnemyController : MonoBehaviour
         soundAlert01 = 0f;
         notSeenTimer = 0f;
         visualLostGraceTimer = 0f;
+
+        reachedSoundPoint = false;
+        decayingSoundAlert = false;
+        currentNoiseSource = null;
+
         StopMove();
     }
 
@@ -330,8 +373,13 @@ public class EnemyController : MonoBehaviour
     {
         state = State.SoundAlert;
         lastHeardPos = heardPosition;
+
+        // 새 소리를 들었을 때는 조사 상태를 처음부터 시작한다.
         soundAlert01 = 0f;
         soundWaitTimer = config.soundInvestigateWait;
+        reachedSoundPoint = false;
+        decayingSoundAlert = false;
+
         visualLostGraceTimer = 0f;
     }
 
@@ -341,6 +389,10 @@ public class EnemyController : MonoBehaviour
         soundAlert01 = 0f;
         visualAlert01 = 0f;
         notSeenTimer = 0f;
+
+        reachedSoundPoint = false;
+        decayingSoundAlert = false;
+        currentNoiseSource = null;
     }
 
     protected virtual void IncreaseVisualAlert()
@@ -390,17 +442,38 @@ public class EnemyController : MonoBehaviour
         if (!isActiveAndEnabled) return;
         if (!config) return;
 
+        // 이미 플레이어를 확실히 보고 추적 중이면 소리보다 시야를 우선한다.
         if (state == State.Chase && vision != null && vision.CanSeeNow)
             return;
 
+        // 자기 자신이 낸 소리는 무시한다.
         if (noise.source == transform)
             return;
 
         float distance = Vector3.Distance(transform.position, noise.position);
-        float effectiveRadius = noise.radius * Mathf.Max(0.01f, config.hearingSensitivity) * Mathf.Max(0.01f, noise.strength);
+        float effectiveRadius =
+            noise.radius
+            * Mathf.Max(0.01f, config.hearingSensitivity)
+            * Mathf.Max(0.01f, noise.strength);
 
         if (distance > effectiveRadius)
             return;
+
+        // 같은 오브젝트가 짧은 시간에 반복해서 내는 소리는 무시한다.
+        if (currentNoiseSource != null && noise.source == currentNoiseSource)
+        {
+            float timeSinceLastNoise = Time.time - lastNoiseAcceptTime;
+            float movedDistance = Vector3.Distance(lastHeardPos, noise.position);
+
+            bool tooSoon = timeSinceLastNoise < config.sameNoiseIgnoreSeconds;
+            bool almostSamePosition = movedDistance < config.sameNoiseUpdateDistance;
+
+            if (tooSoon && almostSamePosition)
+                return;
+        }
+
+        currentNoiseSource = noise.source;
+        lastNoiseAcceptTime = Time.time;
 
         EnterSoundAlertState(noise.position);
     }

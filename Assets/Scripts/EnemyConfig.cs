@@ -27,9 +27,12 @@ public class EnemyConfig : ScriptableObject
 
     [Header("Sound")]
     public float hearingSensitivity = 1.0f;
-    public float soundAlertFillSeconds = 0.4f;
-    public float soundInvestigateWait = 1.2f;
+    public float soundAlertFillSeconds = 0.8f;
+    public float soundAlertDecaySeconds = 1.2f;
+    public float soundInvestigateWait = 0.7f;
     public float soundStopDistance = 0.35f;
+    public float sameNoiseIgnoreSeconds = 0.6f;
+    public float sameNoiseUpdateDistance = 1.0f;
 
     [Header("Damage")]
     public int contactDamagePips = 1;
