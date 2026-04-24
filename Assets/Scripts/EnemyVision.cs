@@ -9,11 +9,12 @@ public class EnemyVision : MonoBehaviour
     Transform target;
     ShadowInteractController targetShadow;
 
-    float visibleTimer;
-    float loseGraceTimer;
-
-    public bool IsDetected { get; private set; }
-    public bool CanSeeNow { get; private set; }
+    public bool CanSeeAlert { get; private set; }
+    public bool CanSeeAttack { get; private set; }
+    public bool CanSeeNow => CanSeeAlert || CanSeeAttack;
+    public bool IsDetected => CanSeeAttack;
+    public bool TargetInShadow => targetShadow != null && targetShadow.IsInShadowMode;
+    public float TargetDistance { get; private set; }
 
     public void SetTarget(Transform t)
     {
@@ -33,82 +34,79 @@ public class EnemyVision : MonoBehaviour
             SetTarget(GameManager.Instance.PlayerTransform);
     }
 
-    public void ResetDetection()
-    {
-        visibleTimer = 0f;
-        loseGraceTimer = 0f;
-        IsDetected = false;
-        CanSeeNow = false;
-    }
-
     void Update()
     {
-        if (!config || !target)
-        {
-            CanSeeNow = false;
-            return;
-        }
+        RefreshNow();
+    }
 
-        // 그림자 모드의 플레이어는 보지 못한다.
-        if (targetShadow && targetShadow.IsInShadowMode)
-        {
-            CanSeeNow = false;
-            loseGraceTimer += Time.deltaTime;
-            if (loseGraceTimer >= config.loseSightGrace)
-                visibleTimer = 0f;
+    public void RefreshNow()
+    {
+        CanSeeAlert = false;
+        CanSeeAttack = false;
+        TargetDistance = Mathf.Infinity;
+
+        if (!config || !target)
             return;
-        }
+
+        if (TargetInShadow)
+            return;
 
         Vector3 origin = eye.position;
-        Vector3 toTarget = target.position - origin;
-        toTarget.y = 0f;
+        Vector3 targetBody = target.position;
+        Vector3 targetPoint = target.position + Vector3.up * config.targetPointYOffset;
 
-        float distance = toTarget.magnitude;
+        Vector3 flatToTarget = targetBody - origin;
+        flatToTarget.y = 0f;
+
+        float distance = flatToTarget.magnitude;
+        TargetDistance = distance;
+
         if (distance > config.viewDistance || distance < 0.001f)
-        {
-            CanSeeNow = false;
-            DecayDetection();
             return;
-        }
 
         Vector3 forward = eye.forward;
         forward.y = 0f;
         forward.Normalize();
 
-        Vector3 dir = toTarget / distance;
-        float angle = Vector3.Angle(forward, dir);
+        Vector3 flatDir = flatToTarget / distance;
+        float angle = Vector3.Angle(forward, flatDir);
+
         if (angle > config.viewAngle * 0.5f)
-        {
-            CanSeeNow = false;
-            DecayDetection();
             return;
-        }
 
-        if (Physics.Raycast(origin, dir, out RaycastHit hit, distance, obstacleMask, QueryTriggerInteraction.Ignore))
-        {
-            CanSeeNow = false;
-            DecayDetection();
+        if (IsBlocked(origin, targetPoint))
             return;
-        }
 
-        CanSeeNow = true;
-        loseGraceTimer = 0f;
+        CanSeeAlert = true;
 
-        if (!IsDetected)
-        {
-            visibleTimer += Time.deltaTime;
-            if (visibleTimer >= config.detectTimeRequired)
-                IsDetected = true;
-        }
+        float attackDistance = Mathf.Min(config.attackViewDistance, config.viewDistance);
+        CanSeeAttack = distance <= attackDistance;
     }
 
-    void DecayDetection()
+    bool IsBlocked(Vector3 origin, Vector3 targetPoint)
     {
-        CanSeeNow = false;
-        loseGraceTimer += Time.deltaTime;
+        Vector3 toTarget = targetPoint - origin;
+        float distance = toTarget.magnitude;
 
-        if (loseGraceTimer >= config.loseSightGrace)
-            visibleTimer = 0f;
+        if (distance <= 0.001f)
+            return false;
+
+        Vector3 dir = toTarget / distance;
+
+        return Physics.Raycast(
+            origin,
+            dir,
+            distance,
+            obstacleMask,
+            QueryTriggerInteraction.Ignore
+        );
+    }
+
+    public void ResetDetection()
+    {
+        CanSeeAlert = false;
+        CanSeeAttack = false;
+        TargetDistance = Mathf.Infinity;
     }
 
 #if UNITY_EDITOR
@@ -122,12 +120,17 @@ public class EnemyVision : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(pos, config.viewDistance);
 
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(pos, config.attackViewDistance);
+
         Vector3 forward = eyeTransform.forward;
         forward.y = 0f;
         forward.Normalize();
 
         Quaternion left = Quaternion.Euler(0f, -config.viewAngle * 0.5f, 0f);
         Quaternion right = Quaternion.Euler(0f, config.viewAngle * 0.5f, 0f);
+
+        Gizmos.color = Color.yellow;
         Gizmos.DrawLine(pos, pos + (left * forward) * config.viewDistance);
         Gizmos.DrawLine(pos, pos + (right * forward) * config.viewDistance);
     }

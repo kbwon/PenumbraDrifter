@@ -13,13 +13,23 @@ MonoBehaviour:
   m_Name: EnemyConfig_Base
   m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
   viewDistance: 8
+  attackViewDistance: 3
   viewAngle: 90
-  detectTimeRequired: 1
-  loseSightGrace: 0.2
+  targetPointYOffset: 0.8
+  detectTimeRequired: 2
+  alertDecaySeconds: 2
+  loseSightGrace: 0.5
+  lostAlertStart01: 1
   moveSpeed: 2.5
   returnSpeed: 2
+  soundMoveSpeed: 1.5
   stopDistance: 2
+  turnSpeed: 10
   waitAfterLost: 1
+  hearingSensitivity: 1
+  soundAlertFillSeconds: 1
+  soundInvestigateWait: 2
+  soundStopDistance: 1
   contactDamagePips: 1
   contactDamageCooldown: 0.6
   loseChaseAfterNotSeenSeconds: 2

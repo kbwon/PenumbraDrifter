@@ -21,6 +21,11 @@ public class PlayerController : MonoBehaviour
     [Header("Facing")]
     public bool artFacesRight = true;
 
+    [Header("Stealth Move")]
+    public KeyCode crouchKey = KeyCode.LeftControl;
+    public float crouchSpeedMul = 0.55f;
+    public bool IsCrouching { get; private set; }
+
     [Header("Fall Respawn")]
     public Transform respawnPoint;
     public float fallRespawnDistance = 8f;
@@ -89,6 +94,8 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        IsCrouching = Input.GetKey(crouchKey);
+
         if (health != null && health.isDead)
         {
             moveInput = Vector2.zero;
@@ -164,6 +171,9 @@ public class PlayerController : MonoBehaviour
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
         float speed = moveSpeed * (shadowCtrl != null ? shadowCtrl.SpeedMultiplier : 1f) * externalMoveSpeedMultiplier;
+
+        if (IsCrouching)
+            speed *= crouchSpeedMul;
 
         if (anchored)
         {

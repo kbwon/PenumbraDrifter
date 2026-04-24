@@ -5,28 +5,41 @@ public class EnemyController : MonoBehaviour
 {
     public EnemyConfig config;
     public EnemyVision vision;
+    public EnemyAlertUI alertUI;
 
     [Header("Target")]
     public string playerTag = "Player";
 
-    // 기본 상태
-    protected enum State { Idle, Chase, LostWait, Return }
+    protected enum State
+    {
+        Idle,
+        VisualAlert,
+        SoundAlert,
+        Chase,
+        LostWait,
+        Return
+    }
 
     protected State state = State.Idle;
     protected Transform player;
+    protected ShadowInteractController playerShadow;
     protected CharacterController cc;
 
-    // 복귀 지점
     protected Vector3 homePos;
 
-    // 놓친 뒤 대기
+    protected float visualAlert01;
+    protected float visualLostGraceTimer;
+    protected float soundAlert01;
+    protected Vector3 lastHeardPos;
+    protected float soundWaitTimer;
+
     protected float lostWaitTimer;
-
-    // 접촉 데미지 쿨다운
     protected float lastDamageTime = -999f;
-
-    // 추적 중 플레이어를 못 본 시간
     protected float notSeenTimer;
+
+    public string CurrentStateName => state.ToString();
+    public float VisualAlert01 => visualAlert01;
+    public float SoundAlert01 => soundAlert01;
 
     protected virtual void Awake()
     {
@@ -34,10 +47,23 @@ public class EnemyController : MonoBehaviour
         homePos = transform.position;
     }
 
+    protected virtual void OnEnable()
+    {
+        NoiseSystem.OnNoise += HandleNoise;
+    }
+
+    protected virtual void OnDisable()
+    {
+        NoiseSystem.OnNoise -= HandleNoise;
+    }
+
     protected virtual void Start()
     {
         if (!vision)
             vision = GetComponent<EnemyVision>();
+
+        if (!alertUI)
+           alertUI = GetComponentInChildren<EnemyAlertUI>(true);
 
         if (vision)
             vision.config = config;
@@ -51,6 +77,9 @@ public class EnemyController : MonoBehaviour
                 player = playerObject.transform;
         }
 
+        if (player != null)
+            playerShadow = player.GetComponent<ShadowInteractController>();
+
         if (vision && player != null)
             vision.SetTarget(player);
     }
@@ -59,10 +88,20 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasRequiredRefs()) return;
 
+        vision.RefreshNow();
+
         switch (state)
         {
             case State.Idle:
                 UpdateIdleState();
+                break;
+
+            case State.VisualAlert:
+                UpdateVisualAlertState();
+                break;
+
+            case State.SoundAlert:
+                UpdateSoundAlertState();
                 break;
 
             case State.Chase:
@@ -77,69 +116,243 @@ public class EnemyController : MonoBehaviour
                 UpdateReturnState();
                 break;
         }
+
+        UpdateAlertUI();
     }
 
     protected virtual bool HasRequiredRefs()
     {
-        return config && player && vision;
+        return config && player && vision && cc;
     }
 
     protected virtual void UpdateIdleState()
     {
-        if (vision.IsDetected)
+        StopMove();
+        DecayVisualAlert();
+
+        if (vision.CanSeeAttack)
         {
-            state = State.Chase;
-            notSeenTimer = 0f;
+            EnterChaseState();
+            return;
+        }
+
+        if (vision.CanSeeAlert)
+        {
+            EnterVisualAlertState(0.05f);
+            return;
+        }
+    }
+
+    protected virtual void UpdateVisualAlertState()
+    {
+        StopMove();
+
+        if (vision.CanSeeAttack)
+        {
+            EnterChaseState();
+            return;
+        }
+
+        if (vision.CanSeeAlert)
+        {
+            visualLostGraceTimer = 0f;
+
+            Vector3 dir = GetFlatDirectionTo(player.position, out _);
+            FaceDirection(dir);
+
+            IncreaseVisualAlert();
+
+            if (visualAlert01 >= 1f)
+            {
+                EnterChaseState();
+                return;
+            }
+
+            return;
+        }
+
+        visualLostGraceTimer += Time.deltaTime;
+
+        if (visualLostGraceTimer >= config.loseSightGrace)
+            DecayVisualAlert();
+
+        if (visualAlert01 <= 0f)
+        {
+            if (ShouldReturnHome())
+                EnterReturnState();
+            else
+                EnterIdleState();
+        }
+    }
+
+    protected virtual void UpdateSoundAlertState()
+    {
+        if (vision.CanSeeAttack)
+        {
+            EnterChaseState();
+            return;
+        }
+
+        if (vision.CanSeeAlert)
+        {
+            EnterVisualAlertState(0.2f);
+            return;
+        }
+
+        soundAlert01 = Mathf.MoveTowards(
+            soundAlert01,
+            1f,
+            Time.deltaTime / Mathf.Max(0.01f, config.soundAlertFillSeconds)
+        );
+
+        Vector3 moveDir = GetFlatDirectionTo(lastHeardPos, out float distance);
+
+        if (distance > config.soundStopDistance)
+        {
+            FaceDirection(moveDir);
+            MoveInDirection(moveDir, config.soundMoveSpeed);
+            return;
+        }
+
+        StopMove();
+
+        if (moveDir.sqrMagnitude > 0.0001f)
+            FaceDirection(moveDir);
+
+        soundWaitTimer -= Time.deltaTime;
+
+        if (soundWaitTimer <= 0f)
+        {
+            soundAlert01 = 0f;
+
+            if (ShouldReturnHome())
+                EnterReturnState();
+            else
+                EnterIdleState();
         }
     }
 
     protected virtual void UpdateChaseState()
     {
-        if (vision.CanSeeNow)
+        if (vision.CanSeeAlert)
         {
             notSeenTimer = 0f;
+            visualAlert01 = 1f;
             ChasePlayer();
             return;
         }
 
+        if (IsPlayerHiddenByShadow())
+        {
+            EnterVisualAlertState(config.lostAlertStart01);
+            return;
+        }
+
         notSeenTimer += Time.deltaTime;
+        StopMove();
 
         if (notSeenTimer >= config.loseChaseAfterNotSeenSeconds)
         {
-            state = State.LostWait;
-            lostWaitTimer = config.waitAfterLost;
+            EnterVisualAlertState(config.lostAlertStart01);
             notSeenTimer = 0f;
-            StopMove();
-            vision.ResetDetection();
-        }
-        else
-        {
-            StopMove();
         }
     }
 
     protected virtual void UpdateLostWaitState()
     {
-        if (vision.IsDetected)
+        StopMove();
+
+        if (vision.CanSeeAttack)
         {
-            state = State.Chase;
+            EnterChaseState();
+            return;
+        }
+
+        if (vision.CanSeeAlert)
+        {
+            EnterVisualAlertState(config.lostAlertStart01);
             return;
         }
 
         lostWaitTimer -= Time.deltaTime;
+
         if (lostWaitTimer <= 0f)
-            state = State.Return;
+            EnterReturnState();
     }
 
     protected virtual void UpdateReturnState()
     {
-        if (vision.IsDetected)
+        if (vision.CanSeeAttack)
         {
-            state = State.Chase;
+            EnterChaseState();
+            return;
+        }
+
+        if (vision.CanSeeAlert)
+        {
+            EnterVisualAlertState(0.05f);
             return;
         }
 
         ReturnHome();
+    }
+
+    protected virtual void EnterIdleState()
+    {
+        state = State.Idle;
+        visualAlert01 = 0f;
+        soundAlert01 = 0f;
+        notSeenTimer = 0f;
+        visualLostGraceTimer = 0f;
+        StopMove();
+    }
+
+    protected virtual void EnterVisualAlertState(float startAlert01)
+    {
+        state = State.VisualAlert;
+        visualAlert01 = Mathf.Max(visualAlert01, startAlert01);
+        visualLostGraceTimer = 0f;
+        notSeenTimer = 0f;
+        soundAlert01 = 0f;
+        StopMove();
+    }
+
+    protected virtual void EnterChaseState()
+    {
+        state = State.Chase;
+        visualAlert01 = 1f;
+        soundAlert01 = 0f;
+        notSeenTimer = 0f;
+        visualLostGraceTimer = 0f;
+    }
+
+    protected virtual void EnterSoundAlertState(Vector3 heardPosition)
+    {
+        state = State.SoundAlert;
+        lastHeardPos = heardPosition;
+        soundAlert01 = 0f;
+        soundWaitTimer = config.soundInvestigateWait;
+        visualLostGraceTimer = 0f;
+    }
+
+    protected virtual void EnterReturnState()
+    {
+        state = State.Return;
+        soundAlert01 = 0f;
+        visualAlert01 = 0f;
+        notSeenTimer = 0f;
+    }
+
+    protected virtual void IncreaseVisualAlert()
+    {
+        visualAlert01 += Time.deltaTime / Mathf.Max(0.01f, config.detectTimeRequired);
+        visualAlert01 = Mathf.Clamp01(visualAlert01);
+    }
+
+    protected virtual void DecayVisualAlert()
+    {
+        visualAlert01 -= Time.deltaTime / Mathf.Max(0.01f, config.alertDecaySeconds);
+        visualAlert01 = Mathf.Clamp01(visualAlert01);
     }
 
     protected virtual void ChasePlayer()
@@ -164,13 +377,44 @@ public class EnemyController : MonoBehaviour
         if (distance <= 0.1f)
         {
             transform.position = new Vector3(homePos.x, transform.position.y, homePos.z);
-            state = State.Idle;
-            vision.ResetDetection();
+            EnterIdleState();
             return;
         }
 
         FaceDirection(moveDir);
         MoveInDirection(moveDir, config.returnSpeed);
+    }
+
+    protected virtual void HandleNoise(GameNoise noise)
+    {
+        if (!isActiveAndEnabled) return;
+        if (!config) return;
+
+        if (state == State.Chase && vision != null && vision.CanSeeNow)
+            return;
+
+        if (noise.source == transform)
+            return;
+
+        float distance = Vector3.Distance(transform.position, noise.position);
+        float effectiveRadius = noise.radius * Mathf.Max(0.01f, config.hearingSensitivity) * Mathf.Max(0.01f, noise.strength);
+
+        if (distance > effectiveRadius)
+            return;
+
+        EnterSoundAlertState(noise.position);
+    }
+
+    protected bool IsPlayerHiddenByShadow()
+    {
+        return playerShadow != null && playerShadow.IsInShadowMode;
+    }
+
+    protected bool ShouldReturnHome()
+    {
+        Vector3 flat = homePos - transform.position;
+        flat.y = 0f;
+        return flat.sqrMagnitude > 0.15f * 0.15f;
     }
 
     protected Vector3 GetFlatDirectionTo(Vector3 targetPos, out float distance)
@@ -187,8 +431,23 @@ public class EnemyController : MonoBehaviour
 
     protected void FaceDirection(Vector3 dir)
     {
-        if (dir.sqrMagnitude > 0.0001f)
-            transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        if (dir.sqrMagnitude <= 0.0001f)
+            return;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir, Vector3.up);
+
+        if (config != null && config.turnSpeed > 0f)
+        {
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRot,
+                config.turnSpeed * Time.deltaTime
+            );
+        }
+        else
+        {
+            transform.rotation = targetRot;
+        }
     }
 
     protected void MoveInDirection(Vector3 dir, float speed)
@@ -200,6 +459,31 @@ public class EnemyController : MonoBehaviour
     protected virtual void StopMove()
     {
         // CharacterController는 Move를 호출하지 않으면 멈춘다.
+    }
+
+    protected virtual void UpdateAlertUI()
+    {
+        if (!alertUI) return;
+
+        switch (state)
+        {
+            case State.VisualAlert:
+            case State.LostWait:
+                alertUI.Show(EnemyAwarenessDisplay.VisualAlert, visualAlert01);
+                break;
+
+            case State.Chase:
+                alertUI.Show(EnemyAwarenessDisplay.Attack, 1f);
+                break;
+
+            case State.SoundAlert:
+                alertUI.Show(EnemyAwarenessDisplay.SoundAlert, soundAlert01);
+                break;
+
+            default:
+                alertUI.Show(EnemyAwarenessDisplay.Hidden, 0f);
+                break;
+        }
     }
 
     protected virtual void OnControllerColliderHit(ControllerColliderHit hit)
