@@ -6,7 +6,7 @@ public class EnemyConfig : ScriptableObject
     [Header("Vision")]
     public float viewDistance = 8f;                  // 바깥쪽 경계 범위
     public float attackViewDistance = 3f;            // 가까운 즉시 발각 범위
-    [Range(0f, 180f)] public float viewAngle = 90f;
+    [Range(0f, 180f)] public float viewAngle = 90f;  
     public float targetPointYOffset = 0.8f;
 
     [Header("Visual Alert")]
