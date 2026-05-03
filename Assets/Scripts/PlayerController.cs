@@ -32,6 +32,19 @@ public class PlayerController : MonoBehaviour
     public bool updateRespawnFromGround = true;
     public float respawnRecordMinInterval = 0.1f;
 
+    [Header("Push Visual")]
+    public Transform pushVisualRoot;
+    public SpriteRenderer[] pushSpriteRenderers;
+    public float pushVisualLerpSpeed = 18f;
+    public float pushAlphaLerpSpeed = 18f;
+
+    Vector3 pushVisualOriginalLocalPos;
+    Vector3 pushVisualTargetLocalOffset;
+    bool pushVisualCheatActive;
+
+    float pushTargetAlpha = 1f;
+    float[] pushOriginalAlphas;
+
     Vector3 lastSafeRespawnPos;
     float lastRespawnRecordTime = -999f;
 
@@ -61,6 +74,82 @@ public class PlayerController : MonoBehaviour
     public void SetPushing(bool pushing)
     {
         isPushing = pushing;
+
+        bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+
+        if (anim != null)
+        {
+            anim.SetBool("isPushing", isPushing && !inShadow);
+
+            if (!pushing)
+            {
+                anim.SetBool("isPushMoving", false);
+            }
+            else if (!inShadow)
+            {
+                anim.SetBool("isRun", false);
+                anim.SetBool("Idle", false);
+                anim.SetBool("isShadowWalk", false);
+                anim.SetBool("ShadowIdle", false);
+            }
+        }
+
+        if (!pushing)
+            ClearPushVisual();
+    }
+
+    public void SetPushVisual(Vector3 worldOffset, float targetAlpha = 1f)
+    {
+        if (pushVisualRoot == null) return;
+
+        pushVisualCheatActive = true;
+        pushTargetAlpha = Mathf.Clamp01(targetAlpha);
+
+        if (pushVisualRoot.parent != null)
+            pushVisualTargetLocalOffset = pushVisualRoot.parent.InverseTransformVector(worldOffset);
+        else
+            pushVisualTargetLocalOffset = worldOffset;
+    }
+
+    public void ClearPushVisual()
+    {
+        pushVisualCheatActive = false;
+        pushVisualTargetLocalOffset = Vector3.zero;
+        pushTargetAlpha = 1f;
+    }
+
+    void UpdatePushVisual()
+    {
+        if (pushVisualRoot != null)
+        {
+            Vector3 targetLocalPos = pushVisualOriginalLocalPos;
+
+            if (pushVisualCheatActive)
+                targetLocalPos += pushVisualTargetLocalOffset;
+
+            float k = 1f - Mathf.Exp(-pushVisualLerpSpeed * Time.deltaTime);
+            pushVisualRoot.localPosition = Vector3.Lerp(
+                pushVisualRoot.localPosition,
+                targetLocalPos,
+                k
+            );
+        }
+
+        if (pushSpriteRenderers == null || pushOriginalAlphas == null)
+            return;
+
+        for (int i = 0; i < pushSpriteRenderers.Length; i++)
+        {
+            SpriteRenderer sr = pushSpriteRenderers[i];
+            if (sr == null) continue;
+
+            float baseAlpha = i < pushOriginalAlphas.Length ? pushOriginalAlphas[i] : 1f;
+            float target = baseAlpha * pushTargetAlpha;
+
+            Color c = sr.color;
+            c.a = Mathf.Lerp(c.a, target, 1f - Mathf.Exp(-pushAlphaLerpSpeed * Time.deltaTime));
+            sr.color = c;
+        }
     }
 
     void Awake()
@@ -93,6 +182,26 @@ public class PlayerController : MonoBehaviour
         ApplyFlip(true);
         lastSafeRespawnPos = respawnPoint != null ? respawnPoint.position : transform.position;
         prevInShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+
+        if (pushVisualRoot == null)
+            pushVisualRoot = visualBillboard != null ? visualBillboard : flipRoot;
+
+        if (pushVisualRoot != null)
+            pushVisualOriginalLocalPos = pushVisualRoot.localPosition;
+
+        if (pushSpriteRenderers == null || pushSpriteRenderers.Length == 0)
+            pushSpriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+        if (pushSpriteRenderers != null && pushSpriteRenderers.Length > 0)
+        {
+            pushOriginalAlphas = new float[pushSpriteRenderers.Length];
+
+            for (int i = 0; i < pushSpriteRenderers.Length; i++)
+            {
+                if (pushSpriteRenderers[i] != null)
+                    pushOriginalAlphas[i] = pushSpriteRenderers[i].color.a;
+            }
+        }
     }
 
     void Update()
@@ -246,15 +355,16 @@ public class PlayerController : MonoBehaviour
 
     void LateUpdate()
     {
-        if (billboardLocked) return;
-
-        if (visualBillboard != null && cam != null)
+        if (!billboardLocked && visualBillboard != null && cam != null)
         {
             Vector3 toCam = cam.position - visualBillboard.position;
             toCam.y = 0f;
+
             if (toCam.sqrMagnitude > 0.0001f)
                 visualBillboard.forward = toCam.normalized;
         }
+
+        UpdatePushVisual();
     }
 
     public void SetBillboardLocked(bool locked)

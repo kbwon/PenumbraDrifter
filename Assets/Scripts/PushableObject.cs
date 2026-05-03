@@ -19,6 +19,20 @@ public class PushableObject : PlayerInteractable
     [Header("Locking")]
     public bool freezeHorizontalWhenIdle = true;
 
+    [Header("Push Camera Assist")]
+    public PushCameraAssist cameraAssist;
+    public bool useCameraAssist = true;
+
+    [Tooltip("카메라가 회전해도 밀기 방향이 바뀌지 않도록, 처음 결정한 축을 유지합니다.")]
+    public bool lockPushAxisWhileHolding = true;
+
+    bool hasLockedPushAxis;
+    Vector3 lockedPushAxis;
+
+    [Header("Visual Occlusion Proxy")]
+    public PushOcclusionProxyGroup occlusionProxy;
+    public bool useOcclusionProxy = true;
+
     PlayerInteractController currentInteractor;
 
     static readonly RigidbodyConstraints FreezeRotAll =
@@ -30,6 +44,7 @@ public class PushableObject : PlayerInteractable
     {
         if (!rb) rb = GetComponent<Rigidbody>();
         if (!mainCollider) mainCollider = GetComponent<Collider>();
+        if (!cameraAssist) cameraAssist = GetComponent<PushCameraAssist>();
 
         ApplyIdleConstraints();
     }
@@ -57,8 +72,14 @@ public class PushableObject : PlayerInteractable
     public override void BeginInteract(PlayerInteractController interactor)
     {
         currentInteractor = interactor;
+        hasLockedPushAxis = false;
+        lockedPushAxis = Vector3.zero;
+
         ApplyActiveConstraints();
         StopHorizontalMotion();
+
+        if (useCameraAssist && cameraAssist != null)
+            cameraAssist.BeginPush();
     }
 
     public override void TickInteract(PlayerInteractController interactor)
@@ -70,6 +91,12 @@ public class PushableObject : PlayerInteractable
     {
         if (interactor != null && currentInteractor != interactor)
             return;
+
+        if (useCameraAssist && cameraAssist != null)
+            cameraAssist.EndPush();
+
+        hasLockedPushAxis = false;
+        lockedPushAxis = Vector3.zero;
 
         currentInteractor = null;
         StopHorizontalMotion();
@@ -92,31 +119,64 @@ public class PushableObject : PlayerInteractable
             return;
         }
 
-        Vector3 moveDir = currentInteractor.Player.MoveDirection;
-        moveDir.y = 0f;
+        Vector3 inputMoveDir = currentInteractor.Player.MoveDirection;
+        inputMoveDir.y = 0f;
 
-        if (moveDir.sqrMagnitude < minInputMagnitude * minInputMagnitude)
+        if (inputMoveDir.sqrMagnitude < minInputMagnitude * minInputMagnitude)
         {
             StopHorizontalMotion();
             return;
         }
 
-        moveDir.Normalize();
+        inputMoveDir.Normalize();
 
         if (snapToWorldAxis)
-            moveDir = SnapToWorldAxis(moveDir);
+            inputMoveDir = SnapToWorldAxis(inputMoveDir);
 
         Vector3 toObject = GetInteractionPoint(currentInteractor) - currentInteractor.Player.transform.position;
         toObject.y = 0f;
 
         if (toObject.sqrMagnitude > 0.0001f)
         {
-            float dot = Vector3.Dot(moveDir, toObject.normalized);
+            float dot = Vector3.Dot(inputMoveDir, toObject.normalized);
             if (dot < minTowardDot)
             {
                 StopHorizontalMotion();
                 return;
             }
+        }
+
+        Vector3 moveDir = inputMoveDir;
+
+        if (lockPushAxisWhileHolding)
+        {
+            if (!hasLockedPushAxis)
+            {
+                lockedPushAxis = inputMoveDir;
+                hasLockedPushAxis = true;
+
+                if (useCameraAssist && cameraAssist != null)
+                    cameraAssist.LockForPushAxis(lockedPushAxis);
+            }
+            else
+            {
+                // 반대 방향 입력이면 밀지 않음.
+                // 카메라 회전으로 입력 방향이 조금 달라지는 정도는 허용.
+                float sameDirection = Vector3.Dot(inputMoveDir, lockedPushAxis);
+
+                if (sameDirection < -0.25f)
+                {
+                    StopHorizontalMotion();
+                    return;
+                }
+
+                moveDir = lockedPushAxis;
+            }
+        }
+        else
+        {
+            if (useCameraAssist && cameraAssist != null)
+                cameraAssist.LockForPushAxis(moveDir);
         }
 
         Vector3 delta = moveDir * (pushSpeed * Time.fixedDeltaTime);

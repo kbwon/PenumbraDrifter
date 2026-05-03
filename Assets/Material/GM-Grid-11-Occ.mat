@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GM-Grid-11-URP
+  m_Name: GM-Grid-11-Occ
   m_Shader: {fileID: -6465566751694194690, guid: 44f8dfd6d74d14469bb0ef07b544f59e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -18,7 +18,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2000
+  m_CustomRenderQueue: 3100
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -55,7 +55,7 @@ Material:
     - _BLEND_MODE: 0
     - _Emission: 0
     - _Metallic: 0.3
-    - _QueueControl: 0
+    - _QueueControl: 1
     - _QueueOffset: 0
     - _Smoothness: 0
     - _Tiling: 2
