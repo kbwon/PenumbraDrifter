@@ -42,13 +42,11 @@ public class PlayerController : MonoBehaviour
     Vector2 moveInput;
     Vector3 moveDir;
     bool isGrounded;
-
+    bool isPushing;
     bool inputLocked;
     bool billboardLocked;
-
     bool isShadowTransitionPlaying;
     bool prevInShadow;
-
     float externalMoveSpeedMultiplier = 1f;
 
     public bool IsGrounded => isGrounded;
@@ -58,6 +56,11 @@ public class PlayerController : MonoBehaviour
     public void SetExternalMoveSpeedMultiplier(float multiplier)
     {
         externalMoveSpeedMultiplier = Mathf.Max(0.05f, multiplier);
+    }
+
+    public void SetPushing(bool pushing)
+    {
+        isPushing = pushing;
     }
 
     void Awake()
@@ -327,6 +330,21 @@ public class PlayerController : MonoBehaviour
     {
         if (anim == null) return;
         if (isShadowTransitionPlaying) return;
+
+        bool pushMoving = isPushing && isMoving && !inShadow;
+
+        anim.SetBool("isPushing", isPushing && !inShadow);
+        anim.SetBool("isPushMoving", pushMoving);
+
+        if (isPushing && !inShadow)
+        {
+            anim.SetBool("isRun", false);
+            anim.SetBool("Idle", !pushMoving);
+            anim.SetBool("isShadowWalk", false);
+            anim.SetBool("ShadowIdle", false);
+            return;
+        }
+
         anim.SetBool("isRun", !inShadow && isMoving);
         anim.SetBool("Idle", !inShadow && !isMoving);
         anim.SetBool("isShadowWalk", inShadow && isMoving);

@@ -79,11 +79,14 @@ public class PlayerInteractController : MonoBehaviour
             }
         }
 
-        float speedMul = activeInteractable is PushableObject
+        bool pushing = activeInteractable is PushableObject;
+
+        float speedMul = pushing
             ? pushingMoveSpeedMultiplier
             : 1f;
 
         player.SetExternalMoveSpeedMultiplier(speedMul);
+        player.SetPushing(pushing);
     }
 
     void OnDisable()
@@ -141,7 +144,10 @@ public class PlayerInteractController : MonoBehaviour
         }
 
         if (player != null)
+        {
             player.SetExternalMoveSpeedMultiplier(1f);
+            player.SetPushing(false);
+        }
     }
 
 #if UNITY_EDITOR
