@@ -331,15 +331,16 @@ public class PlayerController : MonoBehaviour
         if (anim == null) return;
         if (isShadowTransitionPlaying) return;
 
-        bool pushMoving = isPushing && isMoving && !inShadow;
+        bool pushingNow = isPushing && !inShadow;
+        bool pushMoving = pushingNow && isMoving;
 
-        anim.SetBool("isPushing", isPushing && !inShadow);
+        anim.SetBool("isPushing", pushingNow);
         anim.SetBool("isPushMoving", pushMoving);
 
-        if (isPushing && !inShadow)
+        if (pushingNow)
         {
             anim.SetBool("isRun", false);
-            anim.SetBool("Idle", !pushMoving);
+            anim.SetBool("Idle", false);
             anim.SetBool("isShadowWalk", false);
             anim.SetBool("ShadowIdle", false);
             return;
@@ -523,6 +524,8 @@ public class PlayerController : MonoBehaviour
         inputLocked = locked;
 
         if (!locked) return;
+
+        SetPushing(false);
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
