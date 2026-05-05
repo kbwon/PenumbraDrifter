@@ -87,7 +87,7 @@ public class PlayerController : MonoBehaviour
             }
             else if (!inShadow)
             {
-                anim.SetBool("isRun", false);
+                anim.SetBool("isWalk", false);   
                 anim.SetBool("Idle", false);
                 anim.SetBool("isShadowWalk", false);
                 anim.SetBool("ShadowIdle", false);
@@ -284,7 +284,9 @@ public class PlayerController : MonoBehaviour
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
         float speed = moveSpeed * (shadowCtrl != null ? shadowCtrl.SpeedMultiplier : 1f) * externalMoveSpeedMultiplier;
 
-        if (IsCrouching)
+        bool crouchSpeedActive = IsCrouching && !isPushing && !inShadow;
+
+        if (crouchSpeedActive)
             speed *= crouchSpeedMul;
 
         if (anchored)
@@ -444,22 +446,46 @@ public class PlayerController : MonoBehaviour
         bool pushingNow = isPushing && !inShadow;
         bool pushMoving = pushingNow && isMoving;
 
+        bool crouchingNow = IsCrouching && !inShadow && !pushingNow;
+        bool crouchMoving = crouchingNow && isMoving;
+
         anim.SetBool("isPushing", pushingNow);
         anim.SetBool("isPushMoving", pushMoving);
 
+        anim.SetBool("isCrouching", crouchingNow);
+        anim.SetBool("isCrouchMoving", crouchMoving);
+
         if (pushingNow)
         {
-            anim.SetBool("isRun", false);
+            anim.SetBool("isWalk", false);
             anim.SetBool("Idle", false);
             anim.SetBool("isShadowWalk", false);
             anim.SetBool("ShadowIdle", false);
             return;
         }
 
-        anim.SetBool("isRun", !inShadow && isMoving);
-        anim.SetBool("Idle", !inShadow && !isMoving);
-        anim.SetBool("isShadowWalk", inShadow && isMoving);
-        anim.SetBool("ShadowIdle", inShadow && !isMoving);
+        if (inShadow)
+        {
+            anim.SetBool("isWalk", false);
+            anim.SetBool("Idle", false);
+            anim.SetBool("isShadowWalk", isMoving);
+            anim.SetBool("ShadowIdle", !isMoving);
+            return;
+        }
+
+        if (crouchingNow)
+        {
+            anim.SetBool("isWalk", false);
+            anim.SetBool("Idle", false);
+            anim.SetBool("isShadowWalk", false);
+            anim.SetBool("ShadowIdle", false);
+            return;
+        }
+
+        anim.SetBool("isWalk", isMoving);
+        anim.SetBool("Idle", !isMoving);
+        anim.SetBool("isShadowWalk", false);
+        anim.SetBool("ShadowIdle", false);
     }
 
 
@@ -482,7 +508,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // 이동 관련 애니메이션 끄기
-        anim.SetBool("isRun", false);
+        anim.SetBool("isWalk", false);
         anim.SetBool("isShadowWalk", false);
 
         // 현재 Animator 조건 유지
@@ -636,6 +662,12 @@ public class PlayerController : MonoBehaviour
         if (!locked) return;
 
         SetPushing(false);
+
+        if (anim != null)
+        {
+            anim.SetBool("isCrouching", false);
+            anim.SetBool("isCrouchMoving", false);
+        }
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
