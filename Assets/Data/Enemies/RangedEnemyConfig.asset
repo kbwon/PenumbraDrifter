@@ -12,21 +12,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61cc5e469d172a34ca0b91298198e003, type: 3}
   m_Name: RangedEnemyConfig
   m_EditorClassIdentifier: Assembly-CSharp::RangedEnemyConfig
-  viewDistance: 12
-  viewAngle: 90
-  detectTimeRequired: 0.5
+  viewDistance: 10
+  attackViewDistance: 6
+  viewAngle: 180
+  targetPointYOffset: 0.8
+  detectTimeRequired: 0.6
+  alertDecaySeconds: 1
   loseSightGrace: 0.2
-  moveSpeed: 0.5
+  lostAlertStart01: 0.6
+  moveSpeed: 2.5
   returnSpeed: 2
+  soundMoveSpeed: 2
   stopDistance: 6
-  waitAfterLost: 2
+  turnSpeed: 12
+  waitAfterLost: 1
+  hearingSensitivity: 1
+  soundAlertFillSeconds: 0.8
+  soundAlertDecaySeconds: 1.2
+  soundInvestigateWait: 0.7
+  soundStopDistance: 0.35
+  sameNoiseIgnoreSeconds: 0.6
+  sameNoiseUpdateDistance: 1
+  soundGiveUpSeconds: 2
+  attackLockSeconds: 1.1
+  attackHitDelay: 0.18
+  attackHitRange: 1.2
+  checkRangeOnAttackHit: 1
   contactDamagePips: 1
   contactDamageCooldown: 0.6
   loseChaseAfterNotSeenSeconds: 3
   canBeAssassinated: 1
-  attackRange: 10
-  fireCooldown: 1.5
+  attackRange: 6
+  fireCooldown: 1.6
   projectileDamagePips: 1
-  projectileSpeed: 10
+  projectileSpeed: 15
   projectileLifeTime: 3
   fireAfterLostSightSeconds: 1.5

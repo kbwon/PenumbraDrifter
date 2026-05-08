@@ -6,12 +6,36 @@ public class RangedEnemyController : EnemyController
     public Transform muzzle;
     public EnemyProjectile projectilePrefab;
 
+    [Header("Muzzle Offset")]
+    public bool useProceduralMuzzle = true;
+    public float muzzleHeight = 1.2f;
+    public float muzzleForwardOffset = 0.75f;
+    public float muzzleSideOffset = 0f;
+
+    [Header("Muzzle Visual")]
+    public bool useScreenSpaceMuzzleOffsets = true;
+
+    // 총을 들고 있는 손 쪽으로 좌우 보정
+    public float muzzleScreenSideOffset = 0.42f;
+
+    // 플레이어가 화면상 위/아래에 있을 때 총구를 그 방향으로 조금 더 보정
+    public float muzzleScreenDepthOffset = 0.18f;
+
+    // 좌/우 끝으로 쏠 때 총구 끝으로 조금 더 붙이는 추가 보정
+    public float muzzleDirectionalSideBias = 0.08f;
+
+    [Header("Aim Gate")]
+    [Range(-1f, 1f)] public float minFireFacingDot = 0.92f;
+
+
+
     protected RangedEnemyConfig rangedConfig;
     protected float lastFireTime = -999f;
 
-    // 마지막으로 플레이어를 본 위치
     protected Vector3 lastKnownTargetPos;
     protected bool hasLastKnownTargetPos;
+
+    Vector3 pendingShootDir = Vector3.forward;
 
     protected override void Start()
     {
@@ -32,14 +56,12 @@ public class RangedEnemyController : EnemyController
     {
         if (!base.HasRequiredRefs()) return false;
         if (rangedConfig == null) return false;
-        if (muzzle == null) return false;
         if (projectilePrefab == null) return false;
         return true;
     }
 
     protected override void UpdateChaseState()
     {
-        // 지금 플레이어가 보이면 마지막 위치 갱신
         if (vision.CanSeeNow)
         {
             notSeenTimer = 0f;
@@ -50,10 +72,8 @@ public class RangedEnemyController : EnemyController
             return;
         }
 
-        // 안 보이면 시간 누적
         notSeenTimer += Time.deltaTime;
 
-        // 너무 오래 못 보면 추적 종료
         if (notSeenTimer >= config.loseChaseAfterNotSeenSeconds)
         {
             state = State.LostWait;
@@ -64,8 +84,6 @@ public class RangedEnemyController : EnemyController
             return;
         }
 
-        // 아직은 플레이어를 놓친 것으로 확정하지 않았으므로
-        // 마지막으로 본 위치를 기준으로 계속 행동
         if (hasLastKnownTargetPos)
             MoveOrAttack(lastKnownTargetPos, false);
         else
@@ -78,35 +96,89 @@ public class RangedEnemyController : EnemyController
 
         FaceDirection(moveDir);
 
-        // 사정거리 밖이면 계속 접근
+        //멈춰서 조준할 때도 비주얼 플립이 이 방향을 따라가게 한다.
+        if (moveDir.sqrMagnitude > 0.0001f)
+            lastMoveDir = moveDir;
+
         if (distance > rangedConfig.attackRange)
         {
             MoveInDirection(moveDir, config.moveSpeed);
             return;
         }
 
-        // 사정거리 안이면 멈추고 사격
         StopMove();
 
         bool canKeepFiring =
             canSeeTarget ||
             notSeenTimer <= rangedConfig.fireAfterLostSightSeconds;
 
+        //아직 충분히 몸을 안 돌렸으면 이번 프레임은 회전만 하고 발사는 안 한다.
+        if (!IsFacingDirectionEnough(moveDir))
+            return;
+
         if (canKeepFiring)
-            TryFire(moveDir);
+            TryStartShoot(moveDir);
     }
 
-    protected virtual void TryFire(Vector3 shootDir)
+    protected virtual void TryStartShoot(Vector3 shootDir)
     {
-        if (Time.time - lastFireTime < rangedConfig.fireCooldown)
+        if (isAttacking) return;
+        if (Time.time - lastFireTime < rangedConfig.fireCooldown) return;
+
+        if (shootDir.sqrMagnitude <= 0.0001f)
+            shootDir = transform.forward;
+
+        pendingShootDir = shootDir.normalized;
+        
+        lastMoveDir = pendingShootDir;
+
+        lastFireTime = Time.time;
+
+        isAttacking = true;
+        attackDamageDone = false;
+
+        float lockSeconds = Mathf.Max(0.01f, config.attackLockSeconds);
+        attackEndTime = Time.time + lockSeconds;
+
+        StopMove();
+        ZeroHorizontalVelocity();
+
+        if (anim != null)
+            anim.SetBool(walkBoolName, false);
+
+        TriggerAttackAnim();
+    }
+
+    protected override void UpdateAttackLock()
+    {
+        StopMove();
+        ZeroHorizontalVelocity();
+
+        if (pendingShootDir.sqrMagnitude > 0.0001f)
+            FaceDirection(pendingShootDir);
+
+        if (Time.time >= attackEndTime)
+            EndAttack();
+    }
+
+    public void Anim_RangedFire()
+    {
+        if (!isAttacking) return;
+        FireProjectile(pendingShootDir);
+    }
+
+    protected virtual void FireProjectile(Vector3 shootDir)
+    {
+        if (projectilePrefab == null || rangedConfig == null)
             return;
 
         if (shootDir.sqrMagnitude <= 0.0001f)
             shootDir = transform.forward;
 
-        lastFireTime = Time.time;
+        shootDir.y = 0f;
+        shootDir.Normalize();
 
-        Vector3 spawnPos = muzzle.position + shootDir * 0.35f;
+        Vector3 spawnPos = GetProjectileSpawnPosition(shootDir);
 
         EnemyProjectile projectile = Instantiate(
             projectilePrefab,
@@ -120,8 +192,73 @@ public class RangedEnemyController : EnemyController
             rangedConfig.projectileDamagePips,
             rangedConfig.projectileLifeTime,
             playerTag,
-            cc
+            bodyCollider
         );
+    }
+
+    bool IsFacingDirectionEnough(Vector3 dir)
+    {
+        if (dir.sqrMagnitude <= 0.0001f)
+            return true;
+
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+        forward.Normalize();
+
+        dir.y = 0f;
+        dir.Normalize();
+
+        return Vector3.Dot(forward, dir) >= minFireFacingDot;
+    }
+
+    Vector3 GetProjectileSpawnPosition(Vector3 shootDir)
+    {
+        if (!useProceduralMuzzle && muzzle != null)
+            return muzzle.position + shootDir * 0.15f;
+
+        Vector3 spawn = transform.position + Vector3.up * muzzleHeight;
+
+        // 총알이 몸 안에서 시작하지 않게 하는 실제 전방 오프셋
+        spawn += shootDir * muzzleForwardOffset;
+
+        if (!useScreenSpaceMuzzleOffsets || cam == null)
+            return spawn;
+
+        Vector3 camRight = cam.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        Vector3 camForwardOnGround = cam.forward;
+        camForwardOnGround.y = 0f;
+        camForwardOnGround.Normalize();
+
+        float handSign = GetWeaponHandScreenSign();
+
+        // 1) 기본적으로 총을 든 손 쪽으로 이동
+        spawn += camRight * (muzzleScreenSideOffset * handSign);
+
+        // 2) 플레이어가 화면 위/아래에 있을수록 총구를 그 방향으로 더 보내기
+        float depthDot = Vector3.Dot(shootDir, camForwardOnGround);
+        spawn += camForwardOnGround * (muzzleScreenDepthOffset * depthDot);
+
+        // 3) 좌/우로 강하게 쏠 때 총구 끝쪽으로 살짝 더 밀기
+        float sideDot = Vector3.Dot(shootDir, camRight);
+        spawn += camRight * (muzzleDirectionalSideBias * sideDot);
+
+        return spawn;
+    }
+
+    float GetWeaponHandScreenSign()
+    {
+        float sign = 1f;
+
+        if (flipRoot != null)
+            sign = Mathf.Sign(flipRoot.lossyScale.x);
+
+        if (!artFacesRight)
+            sign *= -1f;
+
+        return sign;
     }
 
 #if UNITY_EDITOR

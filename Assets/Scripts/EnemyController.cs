@@ -1,6 +1,7 @@
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class EnemyController : MonoBehaviour
 {
     public EnemyConfig config;
@@ -9,6 +10,27 @@ public class EnemyController : MonoBehaviour
 
     [Header("Target")]
     public string playerTag = "Player";
+
+    [Header("Physics")]
+    public Rigidbody rb;
+    public CapsuleCollider bodyCollider;
+    public LayerMask groundMask;
+    public bool useCustomGravity = true;
+    public float gravity = -25f;
+    public float maxFallSpeed = -35f;
+    public float groundedStickVelocity = -2f;
+    public float groundCheckDistance = 0.2f;
+
+    [Header("View")]
+    public Transform cam;
+    public Transform visualBillboard;
+    public Transform flipRoot;
+    public Animator anim;
+    public bool artFacesRight = true;
+
+    [Header("Animation")]
+    public string walkBoolName = "isWalk";
+    public string attackTriggerName = "attack";
 
     protected enum State
     {
@@ -23,9 +45,11 @@ public class EnemyController : MonoBehaviour
     protected State state = State.Idle;
     protected Transform player;
     protected ShadowInteractController playerShadow;
-    protected CharacterController cc;
 
     protected Vector3 homePos;
+    protected Vector3 desiredVelocity;
+    protected Vector3 lastMoveDir;
+    protected bool isGrounded;
 
     protected float visualAlert01;
     protected float visualLostGraceTimer;
@@ -36,11 +60,16 @@ public class EnemyController : MonoBehaviour
     protected bool decayingSoundAlert;
     protected Transform currentNoiseSource;
     protected float lastNoiseAcceptTime = -999f;
-    protected float soundMoveTimer;
 
     protected float lostWaitTimer;
     protected float lastDamageTime = -999f;
     protected float notSeenTimer;
+
+    protected bool isAttacking;
+    protected float attackEndTime;
+    protected float attackHitTime;
+    protected PlayerHealth attackTarget;
+    protected bool attackDamageDone;
 
     public string CurrentStateName => state.ToString();
     public float VisualAlert01 => visualAlert01;
@@ -48,8 +77,27 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void Awake()
     {
-        cc = GetComponent<CharacterController>();
+        if (!rb) rb = GetComponent<Rigidbody>();
+        if (!bodyCollider) bodyCollider = GetComponent<CapsuleCollider>();
+
+        if (!vision) vision = GetComponent<EnemyVision>();
+        if (!alertUI) alertUI = GetComponentInChildren<EnemyAlertUI>(true);
+        if (!anim) anim = GetComponentInChildren<Animator>();
+
+        if (!flipRoot)
+            flipRoot = visualBillboard != null ? visualBillboard : transform;
+
+        if (!cam)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.MainCameraTransform != null)
+                cam = GameManager.Instance.MainCameraTransform;
+            else if (Camera.main != null)
+                cam = Camera.main.transform;
+        }
+
         homePos = transform.position;
+        SetupRigidbody();
+        ApplyFlip(true);
     }
 
     protected virtual void OnEnable()
@@ -64,12 +112,6 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void Start()
     {
-        if (!vision)
-            vision = GetComponent<EnemyVision>();
-
-        if (!alertUI)
-           alertUI = GetComponentInChildren<EnemyAlertUI>(true);
-
         if (vision)
             vision.config = config;
 
@@ -93,7 +135,18 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasRequiredRefs()) return;
 
+        desiredVelocity = Vector3.zero;
+
         vision.RefreshNow();
+
+        if (isAttacking)
+        {
+            UpdateAttackLock();
+            UpdateAnim();
+            UpdateFlip(lastMoveDir);
+            UpdateAlertUI();
+            return;
+        }
 
         switch (state)
         {
@@ -122,12 +175,34 @@ public class EnemyController : MonoBehaviour
                 break;
         }
 
+        UpdateAnim();
+        UpdateFlip(lastMoveDir);
         UpdateAlertUI();
+    }
+
+    protected virtual void FixedUpdate()
+    {
+        if (!rb) return;
+
+        UpdateGroundState();
+        ApplyMovement();
+    }
+
+    protected virtual void LateUpdate()
+    {
+        if (visualBillboard != null && cam != null)
+        {
+            Vector3 toCam = cam.position - visualBillboard.position;
+            toCam.y = 0f;
+
+            if (toCam.sqrMagnitude > 0.0001f)
+                visualBillboard.forward = toCam.normalized;
+        }
     }
 
     protected virtual bool HasRequiredRefs()
     {
-        return config && player && vision && cc;
+        return config && player && vision && rb && bodyCollider;
     }
 
     protected virtual void UpdateIdleState()
@@ -192,14 +267,12 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void UpdateSoundAlertState()
     {
-        // 소리 조사 중이라도 가까운 공격 시야에 들어오면 즉시 발각된다.
         if (vision.CanSeeAttack)
         {
             EnterChaseState();
             return;
         }
 
-        // 소리 조사 중 시야 경계 범위에 들어오면 물음표가 아니라 느낌표 경계로 바뀐다.
         if (vision.CanSeeAlert)
         {
             EnterVisualAlertState(0.2f);
@@ -208,7 +281,6 @@ public class EnemyController : MonoBehaviour
 
         Vector3 moveDir = GetFlatDirectionTo(lastHeardPos, out float distance);
 
-        // 아직 소리 위치에 도착하지 않았다면 물음표를 채우면서 천천히 이동한다.
         if (!reachedSoundPoint)
         {
             decayingSoundAlert = false;
@@ -221,23 +293,17 @@ public class EnemyController : MonoBehaviour
 
             if (distance > config.soundStopDistance)
             {
-                soundMoveTimer += Time.deltaTime;
-
                 FaceDirection(moveDir);
                 MoveInDirection(moveDir, config.soundMoveSpeed);
-
-                if (soundMoveTimer < config.soundGiveUpSeconds)
-                    return;
+                return;
             }
 
-            // 소리 위치에 도착했다.
             reachedSoundPoint = true;
             soundWaitTimer = config.soundInvestigateWait;
             StopMove();
             return;
         }
 
-        // 소리 위치에 도착한 뒤 잠깐 주변을 확인한다.
         StopMove();
 
         if (moveDir.sqrMagnitude > 0.0001f)
@@ -259,7 +325,6 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        // 아무것도 발견하지 못했으므로 물음표가 서서히 줄어든다.
         soundAlert01 = Mathf.MoveTowards(
             soundAlert01,
             0f,
@@ -381,7 +446,6 @@ public class EnemyController : MonoBehaviour
 
         soundAlert01 = 0f;
         soundWaitTimer = config.soundInvestigateWait;
-        soundMoveTimer = 0f;
         reachedSoundPoint = false;
         decayingSoundAlert = false;
 
@@ -433,7 +497,10 @@ public class EnemyController : MonoBehaviour
 
         if (distance <= 0.1f)
         {
-            transform.position = new Vector3(homePos.x, transform.position.y, homePos.z);
+            Vector3 pos = rb.position;
+            pos.x = homePos.x;
+            pos.z = homePos.z;
+            rb.position = pos;
             EnterIdleState();
             return;
         }
@@ -447,11 +514,9 @@ public class EnemyController : MonoBehaviour
         if (!isActiveAndEnabled) return;
         if (!config) return;
 
-        // 이미 플레이어를 확실히 보고 추적 중이면 소리보다 시야를 우선한다.
         if (state == State.Chase && vision != null && vision.CanSeeNow)
             return;
 
-        // 자기 자신이 낸 소리는 무시한다.
         if (noise.source == transform)
             return;
 
@@ -464,7 +529,6 @@ public class EnemyController : MonoBehaviour
         if (distance > effectiveRadius)
             return;
 
-        // 같은 오브젝트가 짧은 시간에 반복해서 내는 소리는 무시한다.
         if (currentNoiseSource != null && noise.source == currentNoiseSource)
         {
             float timeSinceLastNoise = Time.time - lastNoiseAcceptTime;
@@ -530,13 +594,142 @@ public class EnemyController : MonoBehaviour
 
     protected void MoveInDirection(Vector3 dir, float speed)
     {
-        if (dir.sqrMagnitude <= 0.0001f) return;
-        cc.Move(dir * (speed * Time.deltaTime));
+        if (dir.sqrMagnitude <= 0.0001f)
+        {
+            StopMove();
+            return;
+        }
+
+        Vector3 flatDir = dir.normalized;
+        desiredVelocity = flatDir * speed;
+        lastMoveDir = flatDir;
     }
 
     protected virtual void StopMove()
     {
-        // CharacterController는 Move를 호출하지 않으면 멈춘다.
+        desiredVelocity = Vector3.zero;
+    }
+
+    protected virtual void ApplyMovement()
+    {
+        Vector3 v = rb.linearVelocity;
+
+        float y = v.y;
+
+        if (useCustomGravity)
+        {
+            if (isGrounded && y < 0f)
+                y = groundedStickVelocity;
+
+            y += gravity * Time.fixedDeltaTime;
+            y = Mathf.Max(y, maxFallSpeed);
+        }
+        else
+        {
+            y = 0f;
+        }
+
+        rb.linearVelocity = new Vector3(desiredVelocity.x, y, desiredVelocity.z);
+    }
+
+    protected virtual void UpdateGroundState()
+    {
+        if (!useCustomGravity || groundMask.value == 0 || bodyCollider == null)
+        {
+            isGrounded = true;
+            return;
+        }
+
+        float radius = GetColliderRadiusWorld(bodyCollider);
+        float halfH = GetColliderHeightWorld(bodyCollider) * 0.5f;
+        Vector3 centerWorld = bodyCollider.transform.TransformPoint(bodyCollider.center);
+
+        float halfBody = Mathf.Max(halfH - radius, 0f);
+        Vector3 sphereOrigin = centerWorld + Vector3.down * halfBody + Vector3.up * 0.05f;
+        float sphereRadius = Mathf.Max(0.01f, radius * 0.95f);
+
+        isGrounded = Physics.SphereCast(
+            sphereOrigin,
+            sphereRadius,
+            Vector3.down,
+            out _,
+            groundCheckDistance + 0.05f,
+            groundMask,
+            QueryTriggerInteraction.Ignore
+        );
+    }
+
+    protected virtual void UpdateAnim()
+    {
+        if (!anim) return;
+
+        if (isAttacking)
+        {
+            anim.SetBool(walkBoolName, false);
+            return;
+        }
+
+        bool isMoving = desiredVelocity.sqrMagnitude > 0.0001f;
+        anim.SetBool(walkBoolName, isMoving);
+    }
+
+    protected virtual void TriggerAttackAnim()
+    {
+        if (!anim) return;
+        if (string.IsNullOrEmpty(attackTriggerName)) return;
+
+        anim.SetTrigger(attackTriggerName);
+    }
+
+    protected virtual void UpdateFlip(Vector3 dir)
+    {
+        if (flipRoot == null) return;
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        Vector3 camRight = cam ? cam.right : Vector3.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        float lr = Vector3.Dot(dir, camRight);
+        if (Mathf.Abs(lr) > 0.001f)
+            ApplyFlip(lr > 0f);
+    }
+
+    protected void ApplyFlip(bool faceRight)
+    {
+        if (flipRoot == null) return;
+
+        if (!artFacesRight)
+            faceRight = !faceRight;
+
+        Vector3 scale = flipRoot.localScale;
+        scale.x = Mathf.Abs(scale.x) * (faceRight ? 1f : -1f);
+        flipRoot.localScale = scale;
+    }
+
+    protected virtual void OnCollisionStay(Collision collision)
+    {
+        TryDamagePlayer(collision.collider);
+    }
+
+    protected virtual void OnCollisionEnter(Collision collision)
+    {
+        TryDamagePlayer(collision.collider);
+    }
+
+    protected virtual void TryDamagePlayer(Collider hitCollider)
+    {
+        if (!config) return;
+        if (!hitCollider) return;
+        if (isAttacking) return;
+
+        if (Time.time - lastDamageTime < config.contactDamageCooldown) return;
+
+        PlayerHealth hp = hitCollider.GetComponentInParent<PlayerHealth>();
+        if (hp == null) return;
+        if (!hp.CompareTag(playerTag)) return;
+
+        StartAttack(hp);
     }
 
     protected virtual void UpdateAlertUI()
@@ -564,23 +757,134 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    protected virtual void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        if (!config) return;
-        if (!hit.collider) return;
-        if (Time.time - lastDamageTime < config.contactDamageCooldown) return;
-
-        PlayerHealth hp = hit.collider.GetComponentInParent<PlayerHealth>();
-        if (hp == null) return;
-        if (!hp.CompareTag(playerTag)) return;
-
-        lastDamageTime = Time.time;
-        hp.TakeDamage(config.contactDamagePips);
-    }
-
     public virtual void KillByAssassination()
     {
         if (!config || !config.canBeAssassinated) return;
         gameObject.SetActive(false);
+    }
+
+    void SetupRigidbody()
+    {
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+    }
+
+    float GetColliderHeightWorld(CapsuleCollider col)
+    {
+        Vector3 scale = col.transform.lossyScale;
+        return col.height * Mathf.Abs(scale.y);
+    }
+
+    float GetColliderRadiusWorld(CapsuleCollider col)
+    {
+        Vector3 scale = col.transform.lossyScale;
+        float radiusScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+        return col.radius * radiusScale;
+    }
+
+    protected virtual void StartAttack(PlayerHealth hp)
+    {
+        if (hp == null) return;
+
+        lastDamageTime = Time.time;
+
+        isAttacking = true;
+        attackTarget = hp;
+        attackDamageDone = false;
+
+        float lockSeconds = Mathf.Max(0.01f, config.attackLockSeconds);
+        float hitDelay = Mathf.Clamp(config.attackHitDelay, 0f, lockSeconds);
+
+        attackEndTime = Time.time + lockSeconds;
+        attackHitTime = Time.time + hitDelay;
+
+        StopMove();
+
+        if (rb != null)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+        }
+
+        if (anim != null)
+            anim.SetBool(walkBoolName, false);
+
+        TriggerAttackAnim();
+    }
+
+    protected virtual void UpdateAttackLock()
+    {
+        StopMove();
+        ZeroHorizontalVelocity();
+
+        if (player != null)
+        {
+            Vector3 dir = GetFlatDirectionTo(player.position, out _);
+            FaceDirection(dir);
+        }
+
+        // 데미지는 Animation Event: Anim_AttackHit()에서만 처리한다.
+        // 이 타이머는 Animation Event가 누락됐을 때 공격 상태가 영원히 유지되는 것만 방지한다.
+        if (Time.time >= attackEndTime)
+            EndAttack();
+    }
+
+    protected virtual void ApplyAttackDamage()
+    {
+        if (attackDamageDone) return;
+
+        attackDamageDone = true;
+
+        if (attackTarget == null) return;
+        if (attackTarget.isDead) return;
+
+        if (config.checkRangeOnAttackHit)
+        {
+            Vector3 enemyPos = transform.position;
+            Vector3 targetPos = attackTarget.transform.position;
+
+            enemyPos.y = 0f;
+            targetPos.y = 0f;
+
+            float distance = Vector3.Distance(enemyPos, targetPos);
+
+            if (distance > config.attackHitRange)
+                return;
+        }
+
+        attackTarget.TakeDamage(config.contactDamagePips);
+    }
+
+    protected virtual void EndAttack()
+    {
+        isAttacking = false;
+        attackTarget = null;
+        attackDamageDone = false;
+    }
+
+    public void Anim_AttackHit()
+    {
+        if (!isAttacking) return;
+        ApplyAttackDamage();
+    }
+
+    public void Anim_AttackEnd()
+    {
+        if (!isAttacking) return;
+        EndAttack();
+    }
+
+    protected void ZeroHorizontalVelocity()
+    {
+        if (rb == null) return;
+
+        Vector3 v = rb.linearVelocity;
+        v.x = 0f;
+        v.z = 0f;
+        rb.linearVelocity = v;
     }
 }

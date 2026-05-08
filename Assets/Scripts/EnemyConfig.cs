@@ -35,8 +35,16 @@ public class EnemyConfig : ScriptableObject
     public float sameNoiseUpdateDistance = 1.0f;
     public float soundGiveUpSeconds = 3.0f;
 
+    [Header("Attack Timing")]
+    public float attackLockSeconds = 0.55f;   // 공격 중 적이 멈춰 있는 시간
+    public float attackHitDelay = 0.18f;      // 공격 시작 후 실제 데미지가 들어가는 시간
+
+    [Header("Attack Hit Check")]
+    public float attackHitRange = 1.2f;
+    public bool checkRangeOnAttackHit = true;
+
     [Header("Damage")]
-    public int contactDamagePips = 1;
+    public int contactDamagePips = 0;
     public float contactDamageCooldown = 0.6f;
 
     [Header("Chase Loss")]

@@ -34,7 +34,11 @@ MonoBehaviour:
   sameNoiseIgnoreSeconds: 0.6
   sameNoiseUpdateDistance: 1
   soundGiveUpSeconds: 3
+  attackLockSeconds: 1.3
+  attackHitDelay: 0.4
+  attackHitRange: 2
+  checkRangeOnAttackHit: 0
   contactDamagePips: 1
-  contactDamageCooldown: 0.6
+  contactDamageCooldown: 2
   loseChaseAfterNotSeenSeconds: 0.6
   canBeAssassinated: 1
