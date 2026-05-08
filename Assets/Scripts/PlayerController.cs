@@ -38,6 +38,13 @@ public class PlayerController : MonoBehaviour
     public float pushVisualLerpSpeed = 18f;
     public float pushAlphaLerpSpeed = 18f;
 
+    [Header("Scripted Move")]
+    public bool scriptedMoveUsesGravity = true;
+
+    bool scriptedMoveActive;
+    Vector3 scriptedMoveDir;
+    float scriptedMoveSpeed;
+
     Vector3 pushVisualOriginalLocalPos;
     Vector3 pushVisualTargetLocalOffset;
     bool pushVisualCheatActive;
@@ -219,6 +226,16 @@ public class PlayerController : MonoBehaviour
         if (CheckFallRespawn())
             return;
 
+        if (scriptedMoveActive)
+        {
+            moveInput = Vector2.zero;
+            moveDir = scriptedMoveDir;
+
+            UpdateAnim(true, false);
+            UpdateFlip(scriptedMoveDir);
+            return;
+        }
+
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
 
         if (inShadow != prevInShadow)
@@ -279,6 +296,34 @@ public class PlayerController : MonoBehaviour
 
         UpdateGroundState();
         RecordSafeRespawnPoint();
+
+        if (scriptedMoveActive)
+        {
+            float scriptedY = rb.linearVelocity.y;
+
+            if (scriptedMoveUsesGravity)
+            {
+                if (isGrounded && scriptedY < 0f)
+                    scriptedY = groundedStickVelocity;
+
+                scriptedY += gravity * Time.fixedDeltaTime;
+                scriptedY = Mathf.Max(scriptedY, maxFallSpeed);
+            }
+            else
+            {
+                scriptedY = 0f;
+            }
+
+            Vector3 scriptedHorizontalVelocity = scriptedMoveDir * scriptedMoveSpeed;
+
+            rb.linearVelocity = new Vector3(
+                scriptedHorizontalVelocity.x,
+                scriptedY,
+                scriptedHorizontalVelocity.z
+            );
+
+            return;
+        }
 
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
         bool anchored = inShadow && shadowCtrl != null && shadowCtrl.HasSurfaceAnchor;
@@ -681,6 +726,61 @@ public class PlayerController : MonoBehaviour
             v.z = 0f;
             rb.linearVelocity = v;
         }
+    }
+
+    public void BeginScriptedMove(Vector3 worldDirection, float speed)
+    {
+        scriptedMoveActive = true;
+
+        worldDirection.y = 0f;
+
+        if (worldDirection.sqrMagnitude <= 0.0001f)
+            worldDirection = transform.forward;
+
+        scriptedMoveDir = worldDirection.normalized;
+        scriptedMoveSpeed = speed > 0f ? speed : moveSpeed;
+
+        // 연출 중에는 일반 입력을 막는다.
+        inputLocked = true;
+
+        // 밀기나 그림자 상태는 전환 연출 전에 정리한다.
+        SetPushing(false);
+
+        if (shadowCtrl != null)
+        {
+            shadowCtrl.ForceExitShadowMode();
+            shadowCtrl.ClearSurfaceAnchor();
+            shadowCtrl.ClearMovingShadowHost();
+        }
+
+        isShadowTransitionPlaying = false;
+        prevInShadow = false;
+
+        moveInput = Vector2.zero;
+        moveDir = scriptedMoveDir;
+
+        UpdateAnim(true, false);
+        UpdateFlip(scriptedMoveDir);
+    }
+
+    public void EndScriptedMove(bool keepInputLocked = false)
+    {
+        scriptedMoveActive = false;
+
+        moveInput = Vector2.zero;
+        moveDir = Vector3.zero;
+
+        if (rb != null)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+        }
+
+        UpdateAnim(false, false);
+
+        inputLocked = keepInputLocked;
     }
 
     void SetupRigidbody()

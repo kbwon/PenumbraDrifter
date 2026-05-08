@@ -49,6 +49,8 @@ public class StageIntroDirector : MonoBehaviour
     bool isPlaying;
     bool skipRequested;
 
+    public bool IsPlaying => isPlaying;
+
     IEnumerator Start()
     {
         if (followCamera == null)
@@ -74,10 +76,40 @@ public class StageIntroDirector : MonoBehaviour
     public void PlayIntro()
     {
         if (isPlaying) return;
+
+        RefreshReferences();
+
         if (followCamera == null) return;
         if (goalTarget == null) return;
 
         StartCoroutine(IntroRoutine());
+    }
+
+    public IEnumerator PlayIntroAndWait()
+    {
+        if (isPlaying)
+        {
+            while (isPlaying)
+                yield return null;
+
+            yield break;
+        }
+
+        RefreshReferences();
+
+        if (followCamera == null) yield break;
+        if (goalTarget == null) yield break;
+
+        yield return IntroRoutine();
+    }
+
+    void RefreshReferences()
+    {
+        if (followCamera == null)
+            followCamera = FindFirstObjectByType<FollowCamera>();
+
+        if (playerController == null)
+            playerController = FindFirstObjectByType<PlayerController>();
     }
 
     // 튜토리얼 구역이 바뀔 때 목표 오브젝트를 교체해 재사용한다.
