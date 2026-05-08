@@ -49,19 +49,44 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 205562baf7a37134081fbab9b491c6eb, type: 2}
     - target: {fileID: 919132149155446097, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
       propertyPath: m_Name
-      value: Building4
+      value: BaseBuilding
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3755475935207995944}
   m_SourcePrefab: {fileID: 100100000, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
+--- !u!1 &6480796534017949242 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 6db23ba810657b144b6c9e4fe9aefa4c, type: 3}
+  m_PrefabInstance: {fileID: 6138691948295603051}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3755475935207995944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6480796534017949242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aee0953bb5a88b847a6fb2b65bcd1b93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
+  renderers: []
+  ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
+  occludedDitherFade: 0
+  useFadeIn: 0
+  fadeInStartValue: 1
+  fadeSpeed: 6
+  restoreOriginalImmediately: 1
+  useShadowProxy: 1
+  shadowProxyNameSuffix: _ShadowOnlyProxy
