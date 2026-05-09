@@ -5,21 +5,28 @@ public class PushCameraAssist : MonoBehaviour
     [Header("Refs")]
     public FollowCamera followCamera;
 
-    [Header("Assist")]
+    [Header("Cardinal Push Camera")]
     public bool useAssist = true;
+
+    [Tooltip("밀기 중 Q/E 입력 등으로 카메라가 바뀌어도 다시 고정 각도로 돌립니다.")]
     public bool keepLockedWhilePushing = true;
 
-    [Tooltip("F를 뗐을 때 이전 카메라 각도로 되돌릴지 여부입니다. 처음에는 끄는 것을 추천합니다.")]
-    public bool restoreYawOnEnd = false;
+    [Tooltip("F를 다시 눌러 밀기 모드를 종료했을 때 이전 카메라 각도로 돌아갈지 여부입니다.")]
+    public bool restoreYawOnEnd = true;
 
-    [Tooltip("현재 카메라 각도와 가까운 후보를 약간 선호하게 하는 값입니다.")]
-    public float closeYawWeight = 0.08f;
+    [Tooltip("잠금 순간 카메라 위치까지 즉시 맞춥니다. 부드러운 보정을 원하면 꺼두세요.")]
+    public bool snapImmediatelyOnLock = false;
 
-    [Tooltip("FollowCamera의 stepAngle을 못 찾을 때 사용할 기본 회전 단위입니다.")]
-    public float fallbackStepAngle = 45f;
+    [Tooltip("종료 시 이전 각도로 즉시 복귀할지 여부입니다. 부드러운 복귀를 원하면 꺼두세요.")]
+    public bool snapImmediatelyOnEnd = false;
 
-    [Tooltip("카메라 yaw와 실제 화면 오른쪽 방향이 어긋나면 90 또는 -90으로 조정해보세요.")]
-    public float rightVectorYawOffset = 0f;
+    [Header("Axis To Yaw")]
+    public Vector2 xAxisYaws = new Vector2(0f, 180f);
+    public Vector2 zAxisYaws = new Vector2(90f, 270f);
+
+    [Header("Restore")]
+    public bool roundPreviousYawToStep = true;
+    public float restoreStepAngle = 45f;
 
     [Header("Debug")]
     public bool debugLog;
@@ -51,8 +58,7 @@ public class PushCameraAssist : MonoBehaviour
         if (!keepLockedWhilePushing) return;
         if (!followCamera) return;
 
-        // 밀기 중에는 다른 카메라 입력이 들어와도 다시 고정 yaw로 돌려놓는다.
-        followCamera.SetGameplayYaw(lockedYaw);
+        ApplyYaw(lockedYaw, false);
     }
 
     public void BeginPush()
@@ -62,7 +68,11 @@ public class PushCameraAssist : MonoBehaviour
         active = true;
         hasLockedYaw = false;
 
-        previousYaw = GetApproxCurrentYaw();
+        previousYaw = GetCurrentYaw();
+
+        if (roundPreviousYawToStep)
+            previousYaw = RoundToStep(previousYaw, GetRestoreStep());
+
         hasPreviousYaw = true;
     }
 
@@ -76,15 +86,15 @@ public class PushCameraAssist : MonoBehaviour
         if (pushAxis.sqrMagnitude <= 0.0001f)
             return;
 
-        pushAxis.Normalize();
+        pushAxis = SnapToWorldAxis(pushAxis);
 
-        lockedYaw = ChooseBestYaw(pushAxis);
+        lockedYaw = ChooseCardinalYaw(pushAxis);
         hasLockedYaw = true;
 
-        followCamera.SetGameplayYaw(lockedYaw);
+        ApplyYaw(lockedYaw, snapImmediatelyOnLock);
 
         if (debugLog)
-            Debug.Log($"[PushCameraAssist] PushAxis={pushAxis}, LockedYaw={lockedYaw}");
+            Debug.Log($"[PushCameraAssist] Axis={pushAxis}, LockedYaw={lockedYaw}");
     }
 
     public void EndPush()
@@ -93,72 +103,84 @@ public class PushCameraAssist : MonoBehaviour
 
         active = false;
 
-        if (restoreYawOnEnd && hasPreviousYaw && followCamera)
-            followCamera.SetGameplayYaw(previousYaw);
+        if (followCamera != null && restoreYawOnEnd && hasPreviousYaw)
+            ApplyYaw(previousYaw, snapImmediatelyOnEnd);
 
         hasLockedYaw = false;
         hasPreviousYaw = false;
     }
 
-    float ChooseBestYaw(Vector3 pushAxis)
+    float ChooseCardinalYaw(Vector3 axis)
     {
-        float step = GetStepAngle();
-        float currentYaw = GetApproxCurrentYaw();
+        axis = SnapToWorldAxis(axis);
 
-        int count = Mathf.Max(1, Mathf.RoundToInt(360f / step));
+        float a;
+        float b;
 
-        float bestYaw = RoundToStep(currentYaw, step);
-        float bestScore = -999f;
-
-        for (int i = 0; i < count; i++)
+        if (Mathf.Abs(axis.x) >= Mathf.Abs(axis.z))
         {
-            float candidateYaw = NormalizeYaw(i * step);
-
-            // 이 yaw에서 화면 오른쪽 방향이라고 가정되는 월드 방향
-            Vector3 candidateRight =
-                Quaternion.Euler(0f, candidateYaw + rightVectorYawOffset, 0f) * Vector3.right;
-
-            candidateRight.y = 0f;
-            candidateRight.Normalize();
-
-            // pushAxis가 화면 좌우 방향과 얼마나 가까운지
-            float horizontalScore = Mathf.Abs(Vector3.Dot(pushAxis, candidateRight));
-
-            // 너무 멀리 도는 것을 약하게 방지
-            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(currentYaw, candidateYaw));
-            float closePenalty = yawDelta / 180f * closeYawWeight;
-
-            float score = horizontalScore - closePenalty;
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestYaw = candidateYaw;
-            }
+            a = xAxisYaws.x;
+            b = xAxisYaws.y;
+        }
+        else
+        {
+            a = zAxisYaws.x;
+            b = zAxisYaws.y;
         }
 
-        return bestYaw;
+        float currentYaw = GetCurrentYaw();
+
+        float da = Mathf.Abs(Mathf.DeltaAngle(currentYaw, a));
+        float db = Mathf.Abs(Mathf.DeltaAngle(currentYaw, b));
+
+        return NormalizeYaw(da <= db ? a : b);
     }
 
-    float GetStepAngle()
+    void ApplyYaw(float yaw, bool immediate)
     {
-        if (followCamera != null && followCamera.stepAngle > 0f)
-            return Mathf.Abs(followCamera.stepAngle);
+        if (!followCamera) return;
 
-        return Mathf.Max(1f, Mathf.Abs(fallbackStepAngle));
+        yaw = NormalizeYaw(yaw);
+
+        // 중요:
+        // SetExternalYawLock을 쓰지 않는다.
+        // SetGameplayYaw만 사용해야 FollowCamera의 위치 보간이 살아서 자연스럽게 이동한다.
+        followCamera.SetGameplayYaw(yaw);
+
+        if (immediate)
+        {
+            followCamera.SetYawImmediate(yaw);
+            followCamera.SnapNow();
+        }
     }
 
-    float GetApproxCurrentYaw()
+    Vector3 SnapToWorldAxis(Vector3 dir)
+    {
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude <= 0.0001f)
+            return Vector3.zero;
+
+        if (Mathf.Abs(dir.x) >= Mathf.Abs(dir.z))
+            return new Vector3(Mathf.Sign(dir.x), 0f, 0f);
+
+        return new Vector3(0f, 0f, Mathf.Sign(dir.z));
+    }
+
+    float GetCurrentYaw()
     {
         if (followCamera != null)
-            return NormalizeYaw(followCamera.transform.eulerAngles.y);
+            return NormalizeYaw(followCamera.CurrentYaw);
 
         return 0f;
     }
 
-    float RoundToStep(float yaw, float step)
+    float GetRestoreStep()
     {
-        return NormalizeYaw(Mathf.Round(yaw / step) * step);
+        if (followCamera != null && followCamera.stepAngle > 0f)
+            return followCamera.stepAngle;
+
+        return restoreStepAngle;
     }
 
     float NormalizeYaw(float yaw)
@@ -166,5 +188,11 @@ public class PushCameraAssist : MonoBehaviour
         yaw %= 360f;
         if (yaw < 0f) yaw += 360f;
         return yaw;
+    }
+
+    float RoundToStep(float yaw, float step)
+    {
+        if (step <= 0f) return NormalizeYaw(yaw);
+        return NormalizeYaw(Mathf.Round(yaw / step) * step);
     }
 }

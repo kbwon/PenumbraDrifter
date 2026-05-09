@@ -20,12 +20,12 @@ MonoBehaviour:
   alertDecaySeconds: 1
   loseSightGrace: 0.2
   lostAlertStart01: 0.6
-  moveSpeed: 2.5
+  moveSpeed: 3.5
   returnSpeed: 2
   soundMoveSpeed: 2
-  stopDistance: 6
+  stopDistance: 8
   turnSpeed: 12
-  waitAfterLost: 1
+  waitAfterLost: 2
   hearingSensitivity: 1
   soundAlertFillSeconds: 0.8
   soundAlertDecaySeconds: 1.2

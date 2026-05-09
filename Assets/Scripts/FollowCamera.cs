@@ -27,6 +27,14 @@ public class FollowCamera : MonoBehaviour
 
     public bool IsCinematic => isCinematic;
     public Camera CachedCamera => cachedCamera;
+    public float CurrentYaw => NormalizeYaw(currentYaw);
+
+    float NormalizeYaw(float yaw)
+    {
+        yaw %= 360f;
+        if (yaw < 0f) yaw += 360f;
+        return yaw;
+    }
 
     void Awake()
     {

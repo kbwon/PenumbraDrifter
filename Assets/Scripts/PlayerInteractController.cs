@@ -21,7 +21,11 @@ public class PlayerInteractController : MonoBehaviour
     PlayerInteractable activeInteractable;
 
     public PlayerController Player => player;
-    public bool IsHoldingInteract => Input.GetKey(interactKey);
+
+    // 기존 PushableObject가 이 값을 보고 상호작용 유지 여부를 판단하므로,
+    // 이제는 "F를 누르고 있음"이 아니라 "상호작용 모드가 켜져 있음"으로 의미를 바꾼다.
+    public bool IsHoldingInteract => activeInteractable != null;
+
     public bool IsInteracting => activeInteractable != null;
     public PlayerInteractable ActiveInteractable => activeInteractable;
 
@@ -36,48 +40,55 @@ public class PlayerInteractController : MonoBehaviour
         if (player == null)
             return;
 
-        // 입력 잠금 중에는 상호작용 중단
         if (player.InputLocked)
         {
             StopInteraction();
             return;
         }
 
-        // 그림자 모드에서 밀기 금지
         if (!allowWhileInShadowMode && shadowCtrl != null && shadowCtrl.IsInShadowMode)
         {
             StopInteraction();
             return;
         }
 
-        bool holding = Input.GetKey(interactKey);
-        PlayerInteractable candidate = FindBestInteractable();
+        bool pressed = Input.GetKeyDown(interactKey);
 
-        if (!holding)
+        // F를 다시 누르면 현재 상호작용 종료
+        if (pressed && activeInteractable != null)
         {
             StopInteraction();
             return;
         }
 
-        if (activeInteractable == null)
+        // F를 눌렀고 아직 상호작용 중이 아니면 가장 가까운 상호작용 대상을 잡는다.
+        if (pressed && activeInteractable == null)
         {
+            PlayerInteractable candidate = FindBestInteractable();
+
             if (candidate != null)
                 StartInteraction(candidate);
         }
-        else
+
+        // 토글 모드가 켜져 있는 동안 계속 유지
+        if (activeInteractable != null)
         {
             if (!activeInteractable.CanInteract(this))
             {
                 StopInteraction();
+                return;
+            }
 
-                if (candidate != null)
-                    StartInteraction(candidate);
-            }
-            else
-            {
-                activeInteractable.TickInteract(this);
-            }
+            activeInteractable.TickInteract(this);
         }
+
+        RefreshPlayerInteractionState();
+    }
+
+    void RefreshPlayerInteractionState()
+    {
+        if (player == null)
+            return;
 
         bool pushing = activeInteractable is PushableObject;
 
@@ -133,6 +144,7 @@ public class PlayerInteractController : MonoBehaviour
     {
         activeInteractable = interactable;
         activeInteractable.BeginInteract(this);
+        RefreshPlayerInteractionState();
     }
 
     void StopInteraction()

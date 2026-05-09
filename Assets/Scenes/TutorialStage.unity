@@ -1856,7 +1856,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5961563801077195904, guid: 19d11324a99e842408c450fc303217de, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -16.22
+      value: -15.6710205
       objectReference: {fileID: 0}
     - target: {fileID: 5961563801077195904, guid: 19d11324a99e842408c450fc303217de, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5808,7 +5808,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 140
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5816,7 +5816,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8330,7 +8330,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5961563801077195904, guid: 19d11324a99e842408c450fc303217de, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -16.22
+      value: -15.6710205
       objectReference: {fileID: 0}
     - target: {fileID: 5961563801077195904, guid: 19d11324a99e842408c450fc303217de, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9752,6 +9752,12 @@ MonoBehaviour:
   lockPushAxisWhileHolding: 1
   occlusionProxy: {fileID: 1547466339}
   useOcclusionProxy: 1
+  decidePushAxisFromTouchedFace: 1
+  oppositeInputStopDot: -0.65
+  faceAxisMargin: 0.12
+  beginPushInputDelay: 0.12
+  minInputIntoFaceDot: 0.35
+  allowCornerInputDisambiguation: 0
 --- !u!54 &1547466341
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -10691,7 +10697,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageIntroDirector
   followCamera: {fileID: 536451667}
   playerController: {fileID: 2107204970}
-  goalTarget: {fileID: 0}
+  goalTarget: {fileID: 865411079}
   playOnStart: 1
   allowSkip: 1
   skipKey: 27
@@ -10715,6 +10721,9 @@ MonoBehaviour:
   faceCameraTargets:
   - {fileID: 1025952899}
   faceCameraDuringSpin: 1
+  lockEnemiesDuringIntro: 1
+  autoFindEnemiesForFacingLock: 1
+  enemyFacingTargets: []
 --- !u!4 &1630215723
 Transform:
   m_ObjectHideFlags: 0
@@ -14265,6 +14274,12 @@ MonoBehaviour:
   lockPushAxisWhileHolding: 1
   occlusionProxy: {fileID: 8539029834672043961}
   useOcclusionProxy: 1
+  decidePushAxisFromTouchedFace: 1
+  oppositeInputStopDot: -0.65
+  faceAxisMargin: 0.12
+  beginPushInputDelay: 0.12
+  minInputIntoFaceDot: 0.35
+  allowCornerInputDisambiguation: 0
 --- !u!33 &7050521486405494449
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -14369,9 +14384,9 @@ Transform:
   m_GameObject: {fileID: 546709263592712052}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.21, y: 2, z: 4.57}
+  m_LocalPosition: {x: 0.21, y: 3, z: 4.57}
   m_LocalScale: {x: 3, y: 3, z: 3}
-  m_ConstrainProportionsScale: 1
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1991015811}
   m_Father: {fileID: 847645100}
@@ -14412,9 +14427,12 @@ MonoBehaviour:
   useAssist: 1
   keepLockedWhilePushing: 1
   restoreYawOnEnd: 1
-  closeYawWeight: 0.08
-  fallbackStepAngle: 45
-  rightVectorYawOffset: 0
+  snapImmediatelyOnLock: 0
+  snapImmediatelyOnEnd: 0
+  xAxisYaws: {x: 0, y: 180}
+  zAxisYaws: {x: 90, y: 270}
+  roundPreviousYawToStep: 1
+  restoreStepAngle: 45
   debugLog: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

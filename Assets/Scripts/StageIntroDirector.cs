@@ -46,6 +46,11 @@ public class StageIntroDirector : MonoBehaviour
     public FaceCameraY[] faceCameraTargets;
     public bool faceCameraDuringSpin = true;
 
+    [Header("Enemy Facing")]
+    public bool lockEnemiesDuringIntro = true;
+    public bool autoFindEnemiesForFacingLock = true;
+    public EnemyController[] enemyFacingTargets;
+
     bool isPlaying;
     bool skipRequested;
 
@@ -128,6 +133,11 @@ public class StageIntroDirector : MonoBehaviour
 
         // 인트로 초반에는 플레이어가 카메라를 따라 돌지 않게 한다.
         SetFacingLocked(true);
+
+        CacheEnemyFacingTargets();
+
+        if (lockEnemiesDuringIntro)
+            SetEnemyFacingLocked(true);
 
         followCamera.SetCinematicMode(true);
 
@@ -333,6 +343,7 @@ public class StageIntroDirector : MonoBehaviour
 
         // 인트로 종료 후에는 기본적으로 카메라를 다시 바라보게 한다.
         SetFacingLocked(false);
+        SetEnemyFacingLocked(false);
 
         if (playerController != null)
             playerController.SetInputLocked(false);
@@ -416,11 +427,37 @@ public class StageIntroDirector : MonoBehaviour
         }
 
         SetFacingLocked(false);
+        SetEnemyFacingLocked(false);
 
         if (playerController != null)
             playerController.SetInputLocked(false);
 
         isPlaying = false;
         skipRequested = false;
+    }
+
+    void CacheEnemyFacingTargets()
+    {
+        if (!autoFindEnemiesForFacingLock)
+            return;
+
+        enemyFacingTargets = FindObjectsByType<EnemyController>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        );
+    }
+
+    void SetEnemyFacingLocked(bool locked)
+    {
+        if (enemyFacingTargets == null)
+            return;
+
+        for (int i = 0; i < enemyFacingTargets.Length; i++)
+        {
+            EnemyController enemy = enemyFacingTargets[i];
+
+            if (enemy != null)
+                enemy.SetBillboardLocked(locked);
+        }
     }
 }

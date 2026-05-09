@@ -84,7 +84,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1734234102395704660}
-  - component: {fileID: 195282934386969215}
   m_Layer: 8
   m_Name: VisualBillboard
   m_TagString: Untagged
@@ -108,18 +107,6 @@ Transform:
   - {fileID: 7921847732654814841}
   m_Father: {fileID: 746942186757738368}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &195282934386969215
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 552094807814002525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11ddafa095e96fa48a350dc18cd7178a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FaceCameraY
 --- !u!1 &1097166308459653264
 GameObject:
   m_ObjectHideFlags: 0
@@ -676,6 +663,10 @@ MonoBehaviour:
   flipRoot: {fileID: 7921847732654814841}
   anim: {fileID: 899109814403151339}
   artFacesRight: 1
+  useVisualBillboard: 1
+  useCameraViewDirection: 1
+  billboardLocked: 0
+  billboardSmoothSpeed: 0
   walkBoolName: isWalk
   attackTriggerName: attack
 --- !u!114 &1028108380585962846
@@ -690,11 +681,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7240b1c6eb3f4eb4ba86bd094c007b7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyVision
-  eye: {fileID: 0}
+  eye: {fileID: 4649348313144922043}
   obstacleMask:
     serializedVersion: 2
-    m_Bits: 0
-  config: {fileID: 0}
+    m_Bits: 128
+  config: {fileID: 11400000, guid: 983246bb0332b2c439e20fd49d2882b2, type: 2}
 --- !u!1 &8987544058721171935
 GameObject:
   m_ObjectHideFlags: 0

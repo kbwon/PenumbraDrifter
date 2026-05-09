@@ -65,6 +65,10 @@ public class PlayerController : MonoBehaviour
     bool isPushing;
     bool inputLocked;
     bool billboardLocked;
+
+    bool hasPushFacingDirection;
+    Vector3 pushFacingDirection;
+
     bool isShadowTransitionPlaying;
     bool prevInShadow;
     float externalMoveSpeedMultiplier = 1f;
@@ -82,27 +86,11 @@ public class PlayerController : MonoBehaviour
     {
         isPushing = pushing;
 
-        bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
-
-        if (anim != null)
-        {
-            anim.SetBool("isPushing", isPushing && !inShadow);
-
-            if (!pushing)
-            {
-                anim.SetBool("isPushMoving", false);
-            }
-            else if (!inShadow)
-            {
-                anim.SetBool("isWalk", false);   
-                anim.SetBool("Idle", false);
-                anim.SetBool("isShadowWalk", false);
-                anim.SetBool("ShadowIdle", false);
-            }
-        }
-
         if (!pushing)
+        {
             ClearPushVisual();
+            ClearPushFacingDirection();
+        }
     }
 
     public void SetPushVisual(Vector3 worldOffset, float targetAlpha = 1f)
@@ -271,7 +259,11 @@ public class PlayerController : MonoBehaviour
 
         bool isMoving = moveDir.sqrMagnitude > 0.0001f;
         UpdateAnim(isMoving, inShadow);
-        UpdateFlip(moveDir);
+
+        if (isPushing && hasPushFacingDirection)
+            UpdateFlip(pushFacingDirection);
+        else
+            UpdateFlip(moveDir);
     }
 
     void FixedUpdate()
@@ -781,6 +773,26 @@ public class PlayerController : MonoBehaviour
         UpdateAnim(false, false);
 
         inputLocked = keepInputLocked;
+    }
+
+    public void SetPushFacingDirection(Vector3 worldDirection)
+    {
+        worldDirection.y = 0f;
+
+        if (worldDirection.sqrMagnitude <= 0.0001f)
+        {
+            ClearPushFacingDirection();
+            return;
+        }
+
+        pushFacingDirection = worldDirection.normalized;
+        hasPushFacingDirection = true;
+    }
+
+    public void ClearPushFacingDirection()
+    {
+        hasPushFacingDirection = false;
+        pushFacingDirection = Vector3.zero;
     }
 
     void SetupRigidbody()

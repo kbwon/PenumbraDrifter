@@ -28,6 +28,18 @@ public class EnemyController : MonoBehaviour
     public Animator anim;
     public bool artFacesRight = true;
 
+    [Header("Billboard")]
+    public bool useVisualBillboard = true;
+
+    // true 추천: 적 위치와 상관없이 모든 적이 카메라 시선 방향에 맞춰 같은 각도로 정렬된다.
+    public bool useCameraViewDirection = true;
+
+    // StageIntro 같은 연출 중 적 스프라이트 회전을 멈추기 위한 잠금값
+    public bool billboardLocked = false;
+
+    // 0이면 즉시 회전, 0보다 크면 부드럽게 회전
+    public float billboardSmoothSpeed = 0f;
+
     [Header("Animation")]
     public string walkBoolName = "isWalk";
     public string attackTriggerName = "attack";
@@ -190,14 +202,65 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void LateUpdate()
     {
-        if (visualBillboard != null && cam != null)
-        {
-            Vector3 toCam = cam.position - visualBillboard.position;
-            toCam.y = 0f;
+        UpdateVisualBillboard();
+    }
 
-            if (toCam.sqrMagnitude > 0.0001f)
-                visualBillboard.forward = toCam.normalized;
+    protected virtual void UpdateVisualBillboard()
+    {
+        if (!useVisualBillboard) return;
+        if (billboardLocked) return;
+        if (visualBillboard == null) return;
+
+        if (cam == null)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.MainCameraTransform != null)
+                cam = GameManager.Instance.MainCameraTransform;
+            else if (Camera.main != null)
+                cam = Camera.main.transform;
         }
+
+        if (cam == null) return;
+
+        Vector3 targetForward;
+
+        if (useCameraViewDirection)
+        {
+            // 핵심:
+            // 적의 위치에서 카메라를 바라보는 것이 아니라,
+            // 카메라가 바라보는 방향의 반대 방향으로 모든 적을 동일하게 정렬한다.
+            targetForward = -cam.forward;
+        }
+        else
+        {
+            // 기존 방식: 각 적이 카메라 위치를 직접 바라봄
+            targetForward = cam.position - visualBillboard.position;
+        }
+
+        targetForward.y = 0f;
+
+        if (targetForward.sqrMagnitude <= 0.0001f)
+            return;
+
+        targetForward.Normalize();
+
+        if (billboardSmoothSpeed <= 0f)
+        {
+            visualBillboard.forward = targetForward;
+        }
+        else
+        {
+            float k = 1f - Mathf.Exp(-billboardSmoothSpeed * Time.deltaTime);
+            visualBillboard.forward = Vector3.Slerp(
+                visualBillboard.forward,
+                targetForward,
+                k
+            );
+        }
+    }
+
+    public void SetBillboardLocked(bool locked)
+    {
+        billboardLocked = locked;
     }
 
     protected virtual bool HasRequiredRefs()

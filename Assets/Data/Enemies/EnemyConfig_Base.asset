@@ -12,26 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8b657ad95b392844afce6b3856d6a06, type: 3}
   m_Name: EnemyConfig_Base
   m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
-  viewDistance: 8
-  attackViewDistance: 3
+  viewDistance: 6
+  attackViewDistance: 5
   viewAngle: 90
   targetPointYOffset: 0.8
   detectTimeRequired: 1.2
   alertDecaySeconds: 1
   loseSightGrace: 0.2
   lostAlertStart01: 0.6
-  moveSpeed: 2.5
+  moveSpeed: 4
   returnSpeed: 2
-  soundMoveSpeed: 1.5
+  soundMoveSpeed: 2
   stopDistance: 0.8
   turnSpeed: 10
-  waitAfterLost: 1
+  waitAfterLost: 2
   hearingSensitivity: 2
-  soundAlertFillSeconds: 0.4
-  soundAlertDecaySeconds: 1.2
+  soundAlertFillSeconds: 0.5
+  soundAlertDecaySeconds: 1
   soundInvestigateWait: 1.2
   soundStopDistance: 2
-  sameNoiseIgnoreSeconds: 0.6
+  sameNoiseIgnoreSeconds: 0.5
   sameNoiseUpdateDistance: 1
   soundGiveUpSeconds: 3
   attackLockSeconds: 1.3

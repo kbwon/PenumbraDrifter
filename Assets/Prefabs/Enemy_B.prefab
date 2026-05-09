@@ -40,7 +40,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3716885314418433706}
-  - component: {fileID: 7488445709277572379}
   m_Layer: 8
   m_Name: VisualBillboard
   m_TagString: Untagged
@@ -64,18 +63,6 @@ Transform:
   - {fileID: 8745689460370814335}
   m_Father: {fileID: 380098090651520370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7488445709277572379
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1376428572250415887}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11ddafa095e96fa48a350dc18cd7178a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FaceCameraY
 --- !u!1 &1530708856592098837
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,6 +439,10 @@ MonoBehaviour:
   flipRoot: {fileID: 8745689460370814335}
   anim: {fileID: 0}
   artFacesRight: 1
+  useVisualBillboard: 1
+  useCameraViewDirection: 1
+  billboardLocked: 0
+  billboardSmoothSpeed: 0
   walkBoolName: isWalk
   attackTriggerName: attack
   muzzle: {fileID: 0}
