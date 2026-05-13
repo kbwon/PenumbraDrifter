@@ -5808,7 +5808,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 100
+      value: -4
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5816,7 +5816,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 1561282294727150727, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9756,6 +9756,8 @@ MonoBehaviour:
   oppositeInputStopDot: -0.65
   faceAxisMargin: 0.12
   beginPushInputDelay: 0.12
+  faceSideExtension: 0.5
+  lockFaceAxisOnBegin: 1
   minInputIntoFaceDot: 0.35
   allowCornerInputDisambiguation: 0
 --- !u!54 &1547466341
@@ -14278,6 +14280,8 @@ MonoBehaviour:
   oppositeInputStopDot: -0.65
   faceAxisMargin: 0.12
   beginPushInputDelay: 0.12
+  faceSideExtension: 0.5
+  lockFaceAxisOnBegin: 1
   minInputIntoFaceDot: 0.35
   allowCornerInputDisambiguation: 0
 --- !u!33 &7050521486405494449
