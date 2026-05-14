@@ -11,7 +11,6 @@ public class PlayerHealth : MonoBehaviour
     public bool isDead { get; private set; }
 
     [Header("Game Over")]
-    public GameObject gameOverUI;
     public MonoBehaviour[] controlScriptsToDisable;
 
     public event Action<int, int> OnHealthChanged;
@@ -24,9 +23,6 @@ public class PlayerHealth : MonoBehaviour
 
         if (anim == null)
             anim = GetComponentInChildren<Animator>();
-
-        if (gameOverUI != null)
-            gameOverUI.SetActive(false);
 
         if (GameManager.Instance != null)
             GameManager.Instance.RegisterHealth(this);
@@ -83,8 +79,9 @@ public class PlayerHealth : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        if (anim != null)
-            anim.SetTrigger("die");
+        // 별도 사망 애니메이션은 사용하지 않음.
+        // TakeDamage()에서 이미 hurt 트리거가 실행되므로,
+        // 그 피격 애니메이션이 잠깐 나온 뒤 GameOverDirector가 멈추게 한다.
 
         if (controlScriptsToDisable != null)
         {
@@ -95,9 +92,6 @@ public class PlayerHealth : MonoBehaviour
                     script.enabled = false;
             }
         }
-
-        if (gameOverUI != null)
-            gameOverUI.SetActive(true);
 
         if (GameManager.Instance != null)
             GameManager.Instance.SetGameOver(true);

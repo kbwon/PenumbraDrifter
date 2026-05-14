@@ -260,6 +260,11 @@ MonoBehaviour:
   fallRespawnDistance: 15
   updateRespawnFromGround: 1
   respawnRecordMinInterval: 0.1
+  pushVisualRoot: {fileID: 0}
+  pushSpriteRenderers: []
+  pushVisualLerpSpeed: 18
+  pushAlphaLerpSpeed: 18
+  scriptedMoveUsesGravity: 1
 --- !u!114 &7443147067082003208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -361,12 +366,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShadowAssassination
   shadowCtrl: {fileID: 0}
+  playerController: {fileID: 0}
   assassinateKey: 323
   maxAssassinateDistance: 2.5
   enemyMask:
     serializedVersion: 2
     m_Bits: 256
   anim: {fileID: 0}
+  assassinateTriggerName: shadowAssassinate
+  hitFallbackSeconds: 0.65
+  endFallbackSeconds: 1.8
 --- !u!54 &7491483228534178285
 Rigidbody:
   m_ObjectHideFlags: 0

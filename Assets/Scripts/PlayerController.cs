@@ -64,6 +64,7 @@ public class PlayerController : MonoBehaviour
     bool isGrounded;
     bool isPushing;
     bool inputLocked;
+    bool suppressAnimWhileInputLocked;
     bool billboardLocked;
 
     bool hasPushFacingDirection;
@@ -244,7 +245,13 @@ public class PlayerController : MonoBehaviour
         {
             moveInput = Vector2.zero;
             moveDir = Vector3.zero;
-            UpdateAnim(false, false);
+
+            if (!suppressAnimWhileInputLocked)
+            {
+                bool currentShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+                UpdateAnim(false, currentShadow);
+            }
+
             return;
         }
 
@@ -409,6 +416,12 @@ public class PlayerController : MonoBehaviour
     public void SetBillboardLocked(bool locked)
     {
         billboardLocked = locked;
+    }
+
+    public void SyncShadowStateWithoutTransition()
+    {
+        prevInShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+        isShadowTransitionPlaying = false;
     }
 
     Vector3 BuildGroundMoveDirection(Vector2 input)
@@ -692,23 +705,28 @@ public class PlayerController : MonoBehaviour
         rb.position = targetPos;
     }
 
-    public void SetInputLocked(bool locked)
+    public void SetInputLocked(bool locked, bool updateAnimation = true)
     {
         inputLocked = locked;
+        suppressAnimWhileInputLocked = locked && !updateAnimation;
 
-        if (!locked) return;
+        if (!locked)
+        {
+            suppressAnimWhileInputLocked = false;
+            return;
+        }
 
         SetPushing(false);
 
-        if (anim != null)
-        {
-            anim.SetBool("isCrouching", false);
-            anim.SetBool("isCrouchMoving", false);
-        }
-
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
-        UpdateAnim(false, false);
+
+        if (updateAnimation)
+        {
+            bool currentShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+            UpdateAnim(false, currentShadow);
+        }
+
         shadowCtrl?.ClearMovingShadowHost();
 
         if (rb != null)
