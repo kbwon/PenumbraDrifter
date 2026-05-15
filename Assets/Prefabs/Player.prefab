@@ -204,6 +204,7 @@ GameObject:
   - component: {fileID: 7491483228534178285}
   - component: {fileID: 7102189628573230541}
   - component: {fileID: 5618357879372056066}
+  - component: {fileID: 2877779080383602264}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -350,7 +351,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   anim: {fileID: 0}
   maxPips: 5
-  gameOverUI: {fileID: 0}
   controlScriptsToDisable:
   - {fileID: 5552458226092322471}
 --- !u!114 &6473878728315639961
@@ -374,8 +374,6 @@ MonoBehaviour:
     m_Bits: 256
   anim: {fileID: 0}
   assassinateTriggerName: shadowAssassinate
-  hitFallbackSeconds: 0.65
-  endFallbackSeconds: 1.8
 --- !u!54 &7491483228534178285
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -440,6 +438,24 @@ MonoBehaviour:
   footstepInterval: 0.35
   emitNoiseInShadowMode: 0
   emitNoiseWhileCrouching: 0
+--- !u!114 &2877779080383602264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4711589185062946470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1d78b2b4ff3f4b48ac3a77918fa2fd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AssassinationFeedback
+  visualScaleRoot: {fileID: 7780316780582949408}
+  useHitStop: 1
+  hitStopDuration: 0.055
+  hitStopTimeScale: 0
+  cameraBump: {fileID: 0}
+  useCameraBump: 1
 --- !u!1 &5571130826365743933
 GameObject:
   m_ObjectHideFlags: 0

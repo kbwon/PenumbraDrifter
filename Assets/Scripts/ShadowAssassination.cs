@@ -23,6 +23,7 @@ public class ShadowAssassination : MonoBehaviour
     bool endDone;
 
     EnemyController pendingTarget;
+    AssassinationFeedback feedback;
 
     void Awake()
     {
@@ -34,6 +35,9 @@ public class ShadowAssassination : MonoBehaviour
 
         if (!anim)
             anim = GetComponentInChildren<Animator>();
+
+        if (!feedback)
+            feedback = GetComponent<AssassinationFeedback>();
     }
 
     void Update()
@@ -118,12 +122,21 @@ public class ShadowAssassination : MonoBehaviour
 
         pendingTarget = null;
 
+        if (feedback != null)
+            feedback.ResetVisualScale();
+
         ForceExitShadowForAssassination();
 
         if (playerController != null)
             playerController.SetInputLocked(false);
 
         isAssassinating = false;
+
+        if (feedback != null)
+        {
+            feedback.ResetVisualScale();
+            feedback.StopVisualFeedback();
+        }
 
         Debug.Log("[Assassination] End");
     }

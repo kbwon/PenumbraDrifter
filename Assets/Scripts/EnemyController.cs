@@ -57,6 +57,7 @@ public class EnemyController : MonoBehaviour
     protected State state = State.Idle;
     protected Transform player;
     protected ShadowInteractController playerShadow;
+    protected PlayerHealth playerHealth;
 
     protected Vector3 homePos;
     protected Vector3 desiredVelocity;
@@ -137,7 +138,10 @@ public class EnemyController : MonoBehaviour
         }
 
         if (player != null)
+        {
             playerShadow = player.GetComponent<ShadowInteractController>();
+            playerHealth = player.GetComponent<PlayerHealth>();
+        }
 
         if (vision && player != null)
             vision.SetTarget(player);
@@ -545,9 +549,16 @@ public class EnemyController : MonoBehaviour
 
         FaceDirection(moveDir);
 
-        if (distance <= config.stopDistance)
+        float attackStartRange = Mathf.Max(config.stopDistance, config.attackHitRange);
+
+        if (distance <= attackStartRange)
         {
             StopMove();
+            ZeroHorizontalVelocity();
+
+            if (playerHealth != null && !playerHealth.isDead)
+                StartAttack(playerHealth);
+
             return;
         }
 
@@ -772,12 +783,12 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void OnCollisionStay(Collision collision)
     {
-        TryDamagePlayer(collision.collider);
+        //TryDamagePlayer(collision.collider);
     }
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        TryDamagePlayer(collision.collider);
+        //TryDamagePlayer(collision.collider);
     }
 
     protected virtual void TryDamagePlayer(Collider hitCollider)
