@@ -6,9 +6,16 @@ public class AssassinationScaleResetStateBehaviour : StateMachineBehaviour
     public float startScale = 1.35f;
     public float targetScale = 1f;
 
-    [Tooltip("상태 전체 길이 중 몇 퍼센트 안에 원래 크기로 돌아올지 설정합니다.")]
+    [Header("Lift")]
+    public float startLiftLocalY = 0.18f;
+    public float targetLiftLocalY = 0f;
+
+    [Tooltip("상태 전체 길이 중 몇 퍼센트 안에 원래 크기와 위치로 돌아올지 설정합니다.")]
     [Range(0.05f, 1f)]
     public float resetDuration01 = 0.25f;
+
+    [Header("Curve")]
+    public AnimationCurve resetCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     AssassinationFeedback feedback;
 
@@ -20,7 +27,7 @@ public class AssassinationScaleResetStateBehaviour : StateMachineBehaviour
         feedback = animator.GetComponentInParent<AssassinationFeedback>();
 
         if (feedback != null)
-            feedback.SetVisualScale(startScale);
+            feedback.SetVisualPose(startScale, startLiftLocalY);
     }
 
     public override void OnStateUpdate(
@@ -34,8 +41,12 @@ public class AssassinationScaleResetStateBehaviour : StateMachineBehaviour
         float t = Mathf.Clamp01(stateInfo.normalizedTime);
         float p = Mathf.Clamp01(t / Mathf.Max(0.0001f, resetDuration01));
 
-        float scale = Mathf.Lerp(startScale, targetScale, p);
-        feedback.SetVisualScale(scale);
+        float k = resetCurve != null ? resetCurve.Evaluate(p) : p;
+
+        float scale = Mathf.Lerp(startScale, targetScale, k);
+        float lift = Mathf.Lerp(startLiftLocalY, targetLiftLocalY, k);
+
+        feedback.SetVisualPose(scale, lift);
     }
 
     public override void OnStateExit(
@@ -44,6 +55,6 @@ public class AssassinationScaleResetStateBehaviour : StateMachineBehaviour
         int layerIndex)
     {
         if (feedback != null)
-            feedback.ResetVisualScale();
+            feedback.ResetVisualPose();
     }
 }

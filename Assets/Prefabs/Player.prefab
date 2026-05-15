@@ -456,6 +456,12 @@ MonoBehaviour:
   hitStopTimeScale: 0
   cameraBump: {fileID: 0}
   useCameraBump: 1
+  useBulletTime: 1
+  useVignette: 1
+  vignetteFeedback: {fileID: 0}
+  bulletTimeScale: 0.3
+  bulletTimeDuration: 0.22
+  bulletTimeRestoreDuration: 0.06
 --- !u!1 &5571130826365743933
 GameObject:
   m_ObjectHideFlags: 0

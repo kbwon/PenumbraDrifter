@@ -39,6 +39,9 @@ public class AssassinationFeedback : MonoBehaviour
     bool hasBaseScale;
     Coroutine hitStopRoutine;
 
+    Vector3 baseLocalPosition;
+    bool hasBaseTransform;
+
     void Awake()
     {
         CacheBaseScale();
@@ -133,6 +136,47 @@ public class AssassinationFeedback : MonoBehaviour
             StopCoroutine(bulletTimeRoutine);
 
         bulletTimeRoutine = StartCoroutine(BulletTimeRoutine());
+    }
+
+    public void CacheBaseTransform()
+    {
+        if (visualScaleRoot == null)
+            return;
+
+        baseLocalPosition = visualScaleRoot.localPosition;
+        baseLocalScale = visualScaleRoot.localScale;
+        hasBaseTransform = true;
+    }
+
+    public void SetVisualPose(float uniformScale, float liftLocalY)
+    {
+        if (visualScaleRoot == null)
+            return;
+
+        if (!hasBaseTransform)
+            CacheBaseTransform();
+
+        visualScaleRoot.localScale = new Vector3(
+            baseLocalScale.x * uniformScale,
+            baseLocalScale.y * uniformScale,
+            baseLocalScale.z * uniformScale
+        );
+
+        Vector3 pos = baseLocalPosition;
+        pos.y += liftLocalY;
+        visualScaleRoot.localPosition = pos;
+    }
+
+    public void ResetVisualPose()
+    {
+        if (visualScaleRoot == null)
+            return;
+
+        if (!hasBaseTransform)
+            CacheBaseTransform();
+
+        visualScaleRoot.localScale = baseLocalScale;
+        visualScaleRoot.localPosition = baseLocalPosition;
     }
 
     IEnumerator BulletTimeRoutine()

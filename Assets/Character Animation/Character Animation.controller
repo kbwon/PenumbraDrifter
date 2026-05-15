@@ -371,13 +371,13 @@ AnimatorStateMachine:
     m_Position: {x: 740, y: 650, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 228304239835064355}
-    m_Position: {x: 980, y: 650, z: 0}
+    m_Position: {x: 970, y: 650, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1309179839579695815}
-    m_Position: {x: 1440, y: 650, z: 0}
+    m_Position: {x: 1460, y: 650, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1920159014185911048}
-    m_Position: {x: 1210, y: 650, z: 0}
+    m_Position: {x: 1220, y: 650, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions:
   - {fileID: 6214815485902131440}
@@ -629,7 +629,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: AttackBite
-  m_Speed: 2
+  m_Speed: 2.5
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -707614379539298993}
@@ -718,7 +718,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: AttacktoShadow
-  m_Speed: 1
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -8647144519986937886}
@@ -778,9 +778,9 @@ AnimatorStateTransition:
   m_Mute: 0
   m_IsExit: 0
   serializedVersion: 3
-  m_TransitionDuration: 0.11854261
+  m_TransitionDuration: 0.05357614
   m_TransitionOffset: 0
-  m_ExitTime: 0.7857143
+  m_ExitTime: 0.78571427
   m_HasExitTime: 1
   m_HasFixedDuration: 1
   m_InterruptionSource: 0
@@ -957,7 +957,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: AttackLarger
-  m_Speed: 2
+  m_Speed: 4
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -4735133528030116588}
@@ -1460,7 +1460,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AssassinationScaleUpStateBehaviour
   startScale: 1
   targetScale: 1.3
+  startLiftLocalY: 0
+  targetLiftLocalY: 0.3
   scaleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  liftCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -1696,7 +1722,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AssassinationScaleResetStateBehaviour
   startScale: 1.3
   targetScale: 1
+  startLiftLocalY: 0.3
+  targetLiftLocalY: 0
   resetDuration01: 0.25
+  resetCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1102 &7318625362814960325
 AnimatorState:
   serializedVersion: 6
@@ -1705,7 +1757,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ShadowtoAttack
-  m_Speed: 2
+  m_Speed: 3
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: 2694769725669808423}

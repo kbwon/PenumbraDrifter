@@ -698,9 +698,9 @@ GameObject:
   - component: {fileID: 3004024495615051060}
   - component: {fileID: 1270994503245367776}
   - component: {fileID: 8066689659605583854}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: ShadowCaster
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

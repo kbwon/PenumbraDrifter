@@ -585,6 +585,7 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void HandleNoise(GameNoise noise)
     {
+        Debug.Log($"[Enemy Noise Received] enemy={name}, kind={noise.kind}, noisePos={noise.position}");
         if (!isActiveAndEnabled) return;
         if (!config) return;
 
@@ -599,6 +600,8 @@ public class EnemyController : MonoBehaviour
             noise.radius
             * Mathf.Max(0.01f, config.hearingSensitivity)
             * Mathf.Max(0.01f, noise.strength);
+
+        Debug.Log($"[Enemy Noise Check] enemy={name}, distance={distance}, effectiveRadius={effectiveRadius}");
 
         if (distance > effectiveRadius)
             return;
