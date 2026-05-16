@@ -544,7 +544,11 @@ public class PlayerController : MonoBehaviour
         if (anim == null) return;
 
         isShadowTransitionPlaying = true;
-        SetInputLocked(true);
+
+        // 애니메이션은 아래에서 직접 정리할 것이므로 UpdateAnim 호출을 막는다.
+        SetInputLocked(true, false);
+
+        IsCrouching = false;
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
@@ -557,21 +561,27 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = v;
         }
 
-        // 이동 관련 애니메이션 끄기
+        // 이동/숙이기/밀기 관련 애니메이션 상태를 모두 정리
         anim.SetBool("isWalk", false);
-        anim.SetBool("isShadowWalk", false);
+        anim.SetBool("Idle", false);
 
-        // 현재 Animator 조건 유지
+        anim.SetBool("isCrouching", false);
+        anim.SetBool("isCrouchMoving", false);
+
+        anim.SetBool("isPushing", false);
+        anim.SetBool("isPushMoving", false);
+
+        anim.SetBool("isShadowWalk", false);
+        anim.SetBool("ShadowIdle", false);
+
         if (nowInShadow)
         {
-            // 그림자 모드 진입 애니메이션
-            anim.SetBool("Idle", false);
+            // 그림자 모드 진입 애니메이션 쪽으로 보내기
             anim.SetBool("ShadowIdle", true);
         }
         else
         {
-            // 그림자 모드 해제 애니메이션
-            anim.SetBool("ShadowIdle", false);
+            // 그림자 모드 해제 애니메이션 쪽으로 보내기
             anim.SetBool("Idle", true);
         }
     }

@@ -103,8 +103,6 @@ public class ShadowAssassination : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[Assassination] Killing target: {pendingTarget.name}");
-
         pendingTarget.KillByAssassination();
         pendingTarget = null;
     }
@@ -137,8 +135,6 @@ public class ShadowAssassination : MonoBehaviour
             feedback.ResetVisualScale();
             feedback.StopVisualFeedback();
         }
-
-        Debug.Log("[Assassination] End");
     }
 
     void ForceExitShadowForAssassination()

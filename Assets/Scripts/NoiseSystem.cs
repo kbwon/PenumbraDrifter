@@ -35,9 +35,6 @@ public static class NoiseSystem
     {
         if (radius <= 0f) return;
         if (strength <= 0f) return;
-
-        Debug.Log($"[Noise Emit] kind={kind}, pos={position}, radius={radius}, strength={strength}, source={(source ? source.name : "null")}");
-
         OnNoise?.Invoke(new GameNoise(position, radius, strength, source, kind));
     }
 }

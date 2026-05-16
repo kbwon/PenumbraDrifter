@@ -142,20 +142,25 @@ public class ShadowMoveAreaVisualizer : MonoBehaviour
         int vi = 0;
         int ti = 0;
         float half = cellSize * 0.5f;
-        Vector3 up = normal;
+        Vector3 up = normal.normalized;
 
         for (int i = 0; i < cells.Count; i++)
         {
             int gx = cells[i].x - radiusCells;
             int gz = cells[i].y - radiusCells;
 
-            Vector3 c = center + new Vector3(gx * cellSize, 0f, gz * cellSize);
-            c += up * yOffset;
+            Vector3 worldC = center + new Vector3(gx * cellSize, 0f, gz * cellSize);
+            worldC += up * yOffset;
 
-            verts[vi + 0] = c + new Vector3(-half, 0f, -half);
-            verts[vi + 1] = c + new Vector3(-half, 0f, half);
-            verts[vi + 2] = c + new Vector3(half, 0f, half);
-            verts[vi + 3] = c + new Vector3(half, 0f, -half);
+            Vector3 worldV0 = worldC + new Vector3(-half, 0f, -half);
+            Vector3 worldV1 = worldC + new Vector3(-half, 0f, half);
+            Vector3 worldV2 = worldC + new Vector3(half, 0f, half);
+            Vector3 worldV3 = worldC + new Vector3(half, 0f, -half);
+
+            verts[vi + 0] = transform.InverseTransformPoint(worldV0);
+            verts[vi + 1] = transform.InverseTransformPoint(worldV1);
+            verts[vi + 2] = transform.InverseTransformPoint(worldV2);
+            verts[vi + 3] = transform.InverseTransformPoint(worldV3);
 
             uvs[vi + 0] = new Vector2(0f, 0f);
             uvs[vi + 1] = new Vector2(0f, 1f);
