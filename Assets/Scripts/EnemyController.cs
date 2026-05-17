@@ -952,6 +952,11 @@ public class EnemyController : MonoBehaviour
         EndAttack();
     }
 
+    public void ResetHomePositionToCurrent()
+    {
+        homePos = transform.position;
+    }
+
     protected void ZeroHorizontalVelocity()
     {
         if (rb == null) return;
