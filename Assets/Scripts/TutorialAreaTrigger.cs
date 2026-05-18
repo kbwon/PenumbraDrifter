@@ -38,6 +38,23 @@ public class TutorialAreaTrigger : MonoBehaviour
 
         triggered = true;
 
+        ShadowInteractController shadow = player.GetComponent<ShadowInteractController>();
+        PlayerController playerController = player.GetComponent<PlayerController>();
+
+        if (shadow != null)
+        {
+            shadow.ForceExitShadowMode();
+            shadow.ClearSurfaceAnchor();
+            shadow.ClearMovingShadowHost();
+        }
+
+        if (playerController != null)
+        {
+            playerController.SyncShadowStateWithoutTransition();
+            playerController.SetInputLocked(true);
+        }
+
+
         if (ui == null)
             ui = TutorialUIController.Instance != null
                 ? TutorialUIController.Instance

@@ -1375,7 +1375,7 @@ MonoBehaviour:
       spawnPoint: {fileID: 526592125}
       enterTarget: {fileID: 290311002}
       enterMoveSpeed: 5
-  fixedCameraYaw: 0
+  fixedCameraYaw: -90
   gameplayOrthoSize: 5
   startDelay: 0.5
   ascend01Seconds: 8
@@ -1387,7 +1387,6 @@ MonoBehaviour:
   nextSceneName: Stage_Rooftop
   nextEntryId: Rooftop_Start
   exitDirection: {x: 0, y: 0, z: -1}
-  facingLockController: {fileID: 0}
   motionFX: {fileID: 0}
 --- !u!1001 &980303954
 PrefabInstance:
@@ -1801,6 +1800,26 @@ PrefabInstance:
     - target: {fileID: 3439321964450699880, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
       propertyPath: 'enemyFacingTargets.Array.data[2]'
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636277876555290969, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636277876555290969, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636277876555290969, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636277876555290969, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636277876555290969, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6132110107338603119, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
       propertyPath: m_LocalPosition.x

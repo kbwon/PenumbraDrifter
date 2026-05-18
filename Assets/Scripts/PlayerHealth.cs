@@ -49,7 +49,7 @@ public class PlayerHealth : MonoBehaviour
         currentPips = Mathf.Max(0, currentPips - damagePips);
 
         if (anim != null)
-            anim.SetTrigger("hurt");
+            anim.SetTrigger("Hurt");
 
         NotifyHealthChanged();
 
