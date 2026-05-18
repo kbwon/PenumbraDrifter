@@ -77,6 +77,7 @@ public class PlayerController : MonoBehaviour
     public bool IsGrounded => isGrounded;
     public Vector3 MoveDirection => moveDir;
     public bool InputLocked => inputLocked;
+    public bool IsShadowTransitionPlaying => isShadowTransitionPlaying;
 
     public void SetExternalMoveSpeedMultiplier(float multiplier)
     {

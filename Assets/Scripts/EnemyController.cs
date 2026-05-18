@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -27,6 +28,15 @@ public class EnemyController : MonoBehaviour
     public Transform flipRoot;
     public Animator anim;
     public bool artFacesRight = true;
+
+    [Header("Scripted Entry Move")]
+    public bool hideAlertUIDuringEntryMove = true;
+    public float entryStopDistance = 0.08f;
+
+    bool entryMoveActive;
+    Vector3 entryMoveTarget;
+    float entryMoveSpeed;
+    bool entryVisionWasEnabled;
 
     [Header("Billboard")]
     public bool useVisualBillboard = true;
@@ -152,6 +162,18 @@ public class EnemyController : MonoBehaviour
         if (!HasRequiredRefs()) return;
 
         desiredVelocity = Vector3.zero;
+
+        if (entryMoveActive)
+        {
+            UpdateEntryMoveState();
+            UpdateAnim();
+            UpdateFlip(lastMoveDir);
+
+            if (hideAlertUIDuringEntryMove && alertUI != null)
+                alertUI.Show(EnemyAwarenessDisplay.Hidden, 0f);
+
+            return;
+        }
 
         vision.RefreshNow();
 
@@ -952,6 +974,84 @@ public class EnemyController : MonoBehaviour
         EndAttack();
     }
 
+    public IEnumerator PlayEntryMoveTo(Vector3 targetPosition, float speed)
+    {
+        // Instantiate 직후 Start가 아직 안 끝났을 수 있으므로 한 프레임 기다립니다.
+        yield return null;
+
+        if (!HasRequiredRefs())
+        {
+            Debug.LogWarning($"[EnemyEntry] {name} has missing refs. Entry move skipped.", this);
+            yield break;
+        }
+
+        entryMoveTarget = targetPosition;
+        entryMoveTarget.y = transform.position.y;
+        entryMoveSpeed = Mathf.Max(0.01f, speed);
+        entryMoveActive = true;
+
+        entryVisionWasEnabled = vision != null && vision.enabled;
+
+        if (vision != null)
+        {
+            vision.ResetDetection();
+            vision.enabled = false;
+        }
+
+        StopMove();
+        ZeroHorizontalVelocity();
+
+        while (entryMoveActive && gameObject.activeInHierarchy)
+            yield return null;
+
+        StopMove();
+        ZeroHorizontalVelocity();
+
+        Vector3 finalPos = rb != null ? rb.position : transform.position;
+        finalPos.x = targetPosition.x;
+        finalPos.z = targetPosition.z;
+
+        if (rb != null)
+            rb.position = finalPos;
+        else
+            transform.position = finalPos;
+
+        ResetHomePositionToCurrent();
+        EnterIdleState();
+
+        if (vision != null)
+        {
+            vision.ResetDetection();
+            vision.enabled = entryVisionWasEnabled;
+        }
+
+        Debug.Log($"[EnemyEntry] Entry complete: {name}", this);
+    }
+
+    void UpdateEntryMoveState()
+    {
+        Vector3 current = transform.position;
+        Vector3 target = entryMoveTarget;
+
+        current.y = 0f;
+        target.y = 0f;
+
+        Vector3 toTarget = target - current;
+        float distance = toTarget.magnitude;
+
+        if (distance <= entryStopDistance)
+        {
+            entryMoveActive = false;
+            StopMove();
+            return;
+        }
+
+        Vector3 dir = toTarget / Mathf.Max(0.0001f, distance);
+
+        FaceDirection(dir);
+        MoveInDirection(dir, entryMoveSpeed);
+    }
+
     public void ResetHomePositionToCurrent()
     {
         homePos = transform.position;
@@ -966,4 +1066,6 @@ public class EnemyController : MonoBehaviour
         v.z = 0f;
         rb.linearVelocity = v;
     }
+
+
 }

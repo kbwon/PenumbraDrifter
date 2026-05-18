@@ -339,6 +339,7 @@ Transform:
   - {fileID: 3716885314418433706}
   - {fileID: 896721152281071786}
   - {fileID: 70592316694393594}
+  - {fileID: 5786535608192905586}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!54 &3476448660524827463
@@ -439,6 +440,8 @@ MonoBehaviour:
   flipRoot: {fileID: 8745689460370814335}
   anim: {fileID: 0}
   artFacesRight: 1
+  hideAlertUIDuringEntryMove: 1
+  entryStopDistance: 0.08
   useVisualBillboard: 1
   useCameraViewDirection: 1
   billboardLocked: 0
@@ -651,6 +654,54 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &7986203417890465753
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5786535608192905586}
+  - component: {fileID: 7309003746427883189}
+  m_Layer: 8
+  m_Name: 'SpecialStageAlertUIFaceLock  '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5786535608192905586
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7986203417890465753}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.00000032782552}
+  m_LocalPosition: {x: 2, y: -0.52499986, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 380098090651520370}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7309003746427883189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7986203417890465753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60f180d7d1e0b4a4ca73b231d476c79b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialStageAlertUIFaceLock
+  cam: {fileID: 0}
+  locked: 1
+  useCameraForward: 1
+  debugLog: 0
 --- !u!1 &7997000086705585614
 GameObject:
   m_ObjectHideFlags: 0

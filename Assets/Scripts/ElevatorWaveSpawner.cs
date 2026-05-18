@@ -92,6 +92,12 @@ public class ElevatorWaveSpawner : MonoBehaviour
 
                 aliveEnemies.Add(enemy);
 
+                SpecialStageAlertUILockController alertLock =
+                    FindFirstObjectByType<SpecialStageAlertUILockController>();
+
+                if (alertLock != null)
+                    alertLock.ApplyToSpawnedEnemy(enemy);
+
                 Log($"Spawned enemy: {enemy.name} at {spawn.spawnPoint.name}");
 
                 if (spawn.enterTarget != null)
@@ -118,85 +124,21 @@ public class ElevatorWaveSpawner : MonoBehaviour
             yield break;
 
         EnemyController enemyController = enemy.GetComponent<EnemyController>();
-        EnemyVision enemyVision = enemy.GetComponent<EnemyVision>();
-        Rigidbody rb = enemy.GetComponent<Rigidbody>();
 
-        bool enemyControllerWasEnabled = enemyController != null && enemyController.enabled;
-        bool enemyVisionWasEnabled = enemyVision != null && enemyVision.enabled;
-
-        if (enemyController != null)
-            enemyController.enabled = false;
-
-        if (enemyVision != null)
-            enemyVision.enabled = false;
-
-        if (rb != null)
+        if (enemyController == null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            Debug.LogWarning($"[Wave] {enemy.name} has no EnemyController. Entry move skipped.", enemy);
+            yield break;
         }
 
-        Log($"Enemy entry move start: {enemy.name} -> {spawn.enterTarget.name}");
+        Debug.Log($"[Wave] Enemy entry move start: {enemy.name} -> {spawn.enterTarget.name}", enemy);
 
-        float stopDistance = 0.05f;
+        yield return enemyController.PlayEntryMoveTo(
+            spawn.enterTarget.position,
+            spawn.enterMoveSpeed
+        );
 
-        while (enemy != null)
-        {
-            Vector3 current = enemy.transform.position;
-            Vector3 target = spawn.enterTarget.position;
-
-            current.y = enemy.transform.position.y;
-            target.y = enemy.transform.position.y;
-
-            Vector3 toTarget = target - current;
-            toTarget.y = 0f;
-
-            if (toTarget.magnitude <= stopDistance)
-                break;
-
-            Vector3 dir = toTarget.normalized;
-
-            enemy.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-
-            Vector3 next = enemy.transform.position + dir * (spawn.enterMoveSpeed * Time.deltaTime);
-            next.y = enemy.transform.position.y;
-
-            if (rb != null)
-                rb.MovePosition(next);
-            else
-                enemy.transform.position = next;
-
-            yield return null;
-        }
-
-        if (enemy != null)
-        {
-            Vector3 finalPos = enemy.transform.position;
-            finalPos.x = spawn.enterTarget.position.x;
-            finalPos.z = spawn.enterTarget.position.z;
-
-            if (rb != null)
-            {
-                rb.position = finalPos;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-            else
-            {
-                enemy.transform.position = finalPos;
-            }
-
-            if (enemyController != null)
-            {
-                enemyController.ResetHomePositionToCurrent();
-                enemyController.enabled = enemyControllerWasEnabled;
-            }
-
-            if (enemyVision != null)
-                enemyVision.enabled = enemyVisionWasEnabled;
-
-            Log($"Enemy entry move complete: {enemy.name}");
-        }
+        Debug.Log($"[Wave] Enemy entry move complete: {enemy.name}", enemy);
     }
 
     public bool IsWaveCleared()

@@ -43,6 +43,14 @@ public class ShadowInteractController : MonoBehaviour
     public float movingHostSampleMarginFactor = 0.85f;
     public float lightProbeSurfaceOffset = 0.03f;
 
+    [Header("Damage Protection")]
+    public float shadowTransitionInvulnerableSeconds = 0.6f;
+
+    float shadowTransitionInvulnerableTimer;
+
+    public bool IsShadowDamageProtected =>
+        inShadowMode || shadowTransitionInvulnerableTimer > 0f;
+
     bool inShadowMode;
     bool indicatorVisible;
     bool hasSurfaceAnchorInternal;
@@ -114,6 +122,8 @@ public class ShadowInteractController : MonoBehaviour
 
     void Update()
     {
+        TickShadowDamageProtection();
+
         if (!TryGetCurrentSurfacePoint(out Vector3 point, out Vector3 normal))
         {
             SetIndicator(false);
@@ -149,6 +159,23 @@ public class ShadowInteractController : MonoBehaviour
         }
     }
 
+    void TickShadowDamageProtection()
+    {
+        if (shadowTransitionInvulnerableTimer > 0f)
+            shadowTransitionInvulnerableTimer = Mathf.Max(
+                0f,
+                shadowTransitionInvulnerableTimer - Time.deltaTime
+            );
+    }
+
+    void StartShadowDamageProtection()
+    {
+        shadowTransitionInvulnerableTimer = Mathf.Max(
+            shadowTransitionInvulnerableTimer,
+            shadowTransitionInvulnerableSeconds
+        );
+    }
+
     void CacheColliders()
     {
         if (normalCollider != null && shadowCollider != null)
@@ -180,6 +207,8 @@ public class ShadowInteractController : MonoBehaviour
 
     void EnterShadowMode()
     {
+        StartShadowDamageProtection();
+
         inShadowMode = true;
         ApplyColliderMode(true);
         ClearMovingShadowHost();
@@ -197,6 +226,8 @@ public class ShadowInteractController : MonoBehaviour
 
     void ExitShadowMode()
     {
+        StartShadowDamageProtection();
+
         inShadowMode = false;
         ApplyColliderMode(false);
 

@@ -396,7 +396,7 @@ Transform:
   m_GameObject: {fileID: 114990819}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4, y: 0, z: 6}
+  m_LocalPosition: {x: -2, y: 0, z: 6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -454,7 +454,11 @@ MonoBehaviour:
   debugLog: 1
   testWave:
     waveName: 
-    enemies: []
+    enemies:
+    - enemyPrefab: {fileID: 0}
+      spawnPoint: {fileID: 0}
+      enterTarget: {fileID: 0}
+      enterMoveSpeed: 0
 --- !u!1 &168216876
 GameObject:
   m_ObjectHideFlags: 0
@@ -615,6 +619,10 @@ PrefabInstance:
     - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -819,7 +827,7 @@ Transform:
   m_GameObject: {fileID: 526592124}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 0, z: 6}
+  m_LocalPosition: {x: 2, y: 0, z: 6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1348,27 +1356,27 @@ MonoBehaviour:
     - enemyPrefab: {fileID: 7110371121047906416, guid: 12ede08204e777940a7f622fb63e31ba, type: 3}
       spawnPoint: {fileID: 1739668393}
       enterTarget: {fileID: 1381890344}
-      enterMoveSpeed: 2.5
+      enterMoveSpeed: 5
   wave02:
     waveName: 
     enemies:
     - enemyPrefab: {fileID: 3215750657035701662, guid: adbf9bced650d514a8694657c04b96ea, type: 3}
       spawnPoint: {fileID: 1739668393}
       enterTarget: {fileID: 290311002}
-      enterMoveSpeed: 2.5
+      enterMoveSpeed: 5
   finalWave:
     waveName: 
     enemies:
     - enemyPrefab: {fileID: 7110371121047906416, guid: 12ede08204e777940a7f622fb63e31ba, type: 3}
       spawnPoint: {fileID: 114990820}
       enterTarget: {fileID: 1381890344}
-      enterMoveSpeed: 2.5
+      enterMoveSpeed: 5
     - enemyPrefab: {fileID: 3215750657035701662, guid: adbf9bced650d514a8694657c04b96ea, type: 3}
       spawnPoint: {fileID: 526592125}
       enterTarget: {fileID: 290311002}
-      enterMoveSpeed: 2.5
+      enterMoveSpeed: 5
   fixedCameraYaw: 0
-  gameplayOrthoSize: 7
+  gameplayOrthoSize: 5
   startDelay: 0.5
   ascend01Seconds: 8
   ascend02Seconds: 10
@@ -1378,7 +1386,8 @@ MonoBehaviour:
   fastScrollSpeed: 4
   nextSceneName: Stage_Rooftop
   nextEntryId: Rooftop_Start
-  exitDirection: {x: 0, y: 0, z: 1}
+  exitDirection: {x: 0, y: 0, z: -1}
+  facingLockController: {fileID: 0}
   motionFX: {fileID: 0}
 --- !u!1001 &980303954
 PrefabInstance:
@@ -1631,6 +1640,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2035336001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1096837661
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1096837662}
+  - component: {fileID: 1096837663}
+  m_Layer: 0
+  m_Name: SpecialStageAlertUILockController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1096837662
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096837661}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.55102, y: 3.26385, z: -0.83449}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1096837663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096837661}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eca531e021d1d5e4b8542b60114f8b74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialStageAlertUILockController
+  applyOnStart: 1
+  debugLog: 1
 --- !u!1001 &1117440305
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2028,9 +2083,9 @@ MonoBehaviour:
   alsoUnityConsole: 1
   toggleKey: 290
   maxLines: 12
-  fontSize: 18
+  fontSize: 15
   offset: {x: 12, y: 12}
-  size: {x: 900, y: 360}
+  size: {x: 600, y: 240}
 --- !u!1 &1381890343
 GameObject:
   m_ObjectHideFlags: 0
@@ -2137,6 +2192,10 @@ PrefabInstance:
     - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2316,21 +2375,21 @@ MonoBehaviour:
   - name: 
     target: {fileID: 375097698}
     moveDirection: {x: 0, y: -1, z: 0}
-    speedMultiplier: 4
+    speedMultiplier: 3
     loop: 1
     loopDistance: 40
     startPosition: {x: 0, y: 0, z: 0}
   - name: 
     target: {fileID: 1743039439}
     moveDirection: {x: 0, y: -1, z: 0}
-    speedMultiplier: 4
+    speedMultiplier: 3
     loop: 1
     loopDistance: 40
     startPosition: {x: 0, y: 0, z: 0}
   - name: 
     target: {fileID: 1388666793}
     moveDirection: {x: 0, y: -1, z: 0}
-    speedMultiplier: 4
+    speedMultiplier: 3
     loop: 1
     loopDistance: 40
     startPosition: {x: 0, y: 0, z: 0}
@@ -2667,6 +2726,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2784,6 +2847,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2896,6 +2963,10 @@ PrefabInstance:
     - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
       propertyPath: m_Layer
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4609284065106933479, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3101,3 +3172,4 @@ SceneRoots:
   - {fileID: 1392072392}
   - {fileID: 1473643539}
   - {fileID: 1369395508}
+  - {fileID: 1096837662}

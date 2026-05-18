@@ -16,6 +16,9 @@ public class PlayerHealth : MonoBehaviour
     public event Action<int, int> OnHealthChanged;
     public event Action OnDead;
 
+    ShadowInteractController shadowCtrl;
+    PlayerController playerController;
+
     void Awake()
     {
         currentPips = maxPips;
@@ -26,6 +29,9 @@ public class PlayerHealth : MonoBehaviour
 
         if (GameManager.Instance != null)
             GameManager.Instance.RegisterHealth(this);
+
+        shadowCtrl = GetComponent<ShadowInteractController>();
+        playerController = GetComponent<PlayerController>();
     }
 
     void Start()
@@ -38,11 +44,12 @@ public class PlayerHealth : MonoBehaviour
     {
         if (isDead) return;
         if (damagePips <= 0) return;
+        if (IsInvulnerableByShadow()) return;
 
         currentPips = Mathf.Max(0, currentPips - damagePips);
 
         if (anim != null)
-            anim.SetTrigger("Hurt");
+            anim.SetTrigger("hurt");
 
         NotifyHealthChanged();
 
@@ -102,5 +109,16 @@ public class PlayerHealth : MonoBehaviour
     void NotifyHealthChanged()
     {
         OnHealthChanged?.Invoke(currentPips, maxPips);
+    }
+
+    bool IsInvulnerableByShadow()
+    {
+        if (shadowCtrl != null && shadowCtrl.IsShadowDamageProtected)
+            return true;
+
+        if (playerController != null && playerController.IsShadowTransitionPlaying)
+            return true;
+
+        return false;
     }
 }
