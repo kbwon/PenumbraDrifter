@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class FollowCamera : MonoBehaviour
 {
+    [Header("Stability")]
+    public bool stableOrthographicRotation = true;
+    [Header("Cinematic")]
+    public bool cinematicInstantPosition = true;
+
     public Transform target;
     public Vector3 offset = new Vector3(0f, 10f, -15f);
     public Vector3 lookAtOffset = new Vector3(0f, 6f, 0f);
@@ -78,7 +83,7 @@ public class FollowCamera : MonoBehaviour
             currentYaw = Mathf.LerpAngle(currentYaw, targetYaw, rotateSmooth * Time.deltaTime);
         }
 
-        ApplyCamera(isCinematic);
+        ApplyCamera(isCinematic && cinematicInstantPosition);
     }
 
     Vector3 GetFocusPoint()
@@ -92,19 +97,33 @@ public class FollowCamera : MonoBehaviour
     void ApplyCamera(bool instantPosition)
     {
         Vector3 lookPoint = GetFocusPoint();
+
         Quaternion yawRot = Quaternion.Euler(0f, currentYaw, 0f);
-        Vector3 desiredPos = lookPoint + yawRot * (offset * runtimeDistanceScale);
+        Vector3 desiredOffset = yawRot * (offset * runtimeDistanceScale);
+        Vector3 desiredPos = lookPoint + desiredOffset;
 
         if (instantPosition)
             transform.position = desiredPos;
         else
             transform.position = Vector3.Lerp(transform.position, desiredPos, followSmooth * Time.deltaTime);
 
-        Vector3 lookDir = lookPoint - transform.position;
+        Vector3 lookDir;
+
+        if (stableOrthographicRotation && cachedCamera != null && cachedCamera.orthographic)
+        {
+            // 핵심:
+            // 현재 카메라 위치에서 타깃을 다시 바라보지 않고,
+            // yaw + offset으로 정해진 고정 시점 방향을 유지한다.
+            lookDir = -desiredOffset;
+        }
+        else
+        {
+            lookDir = lookPoint - transform.position;
+        }
+
         if (lookDir.sqrMagnitude > 0.0001f)
             transform.rotation = Quaternion.LookRotation(lookDir.normalized, Vector3.up);
 
-        // 직교 카메라일 때만 표시 범위를 조절한다.
         if (cachedCamera != null && cachedCamera.orthographic)
             cachedCamera.orthographicSize = runtimeOrthoSize;
     }
@@ -172,5 +191,10 @@ public class FollowCamera : MonoBehaviour
     public void SnapNow()
     {
         ApplyCamera(true);
+    }
+
+    public void SetCinematicInstantPosition(bool instant)
+    {
+        cinematicInstantPosition = instant;
     }
 }

@@ -27,10 +27,10 @@ public class ElevatorMotionFX : MonoBehaviour
 
         while (t < seconds)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
 
-            float x = Mathf.Sin(Time.time * shakeFrequency) * shakeAmount;
-            float y = Mathf.Cos(Time.time * shakeFrequency * 0.7f) * shakeAmount;
+            float x = Mathf.Sin(Time.unscaledTime * shakeFrequency) * shakeAmount;
+            float y = Mathf.Cos(Time.unscaledTime * shakeFrequency * 0.7f) * shakeAmount;
 
             shakeTarget.localPosition = originalLocalPos + new Vector3(x, y, 0f);
 
