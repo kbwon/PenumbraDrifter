@@ -16649,6 +16649,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 7667754210580358549, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
+      propertyPath: stableOrthographicRotation
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8368804767393020359, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
       propertyPath: m_LocalPosition.x
       value: 16.686
