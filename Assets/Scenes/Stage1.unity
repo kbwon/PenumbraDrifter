@@ -4573,7 +4573,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -4763,7 +4763,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -5188,7 +5188,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -8884,7 +8884,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 380098090651520370, guid: adbf9bced650d514a8694657c04b96ea, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -20.2
+      value: -23.7
       objectReference: {fileID: 0}
     - target: {fileID: 380098090651520370, guid: adbf9bced650d514a8694657c04b96ea, type: 3}
       propertyPath: m_LocalRotation.w
@@ -11443,7 +11443,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -12830,7 +12830,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -15693,7 +15693,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -16386,7 +16386,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
@@ -22812,7 +22812,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionDitherTarget
   renderers: []
   ditherTemplateMaterial: {fileID: 2100000, guid: e5af174c12614294dac876f2a981a82e, type: 2}
-  occludedDitherFade: 0
+  occludedDitherFade: 0.4
   useFadeIn: 0
   fadeInStartValue: 1
   fadeSpeed: 6
