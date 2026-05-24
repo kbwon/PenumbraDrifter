@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
@@ -5,6 +6,21 @@ public class Stage1GoalGate : MonoBehaviour
 {
     [Header("Requirement")]
     public bool requireKeyItem = true;
+
+    [Header("Dialogue")]
+    public DialogueLine[] keyMissingLines =
+    {
+        new DialogueLine("System", "Access denied. Keycard required."),
+        new DialogueLine("Drifter", "So the card key comes first.")
+    };
+
+    public bool showUnlockedDialogueBeforeTransition = false;
+
+    public DialogueLine[] keyAcceptedLines =
+    {
+        new DialogueLine("System", "Keycard accepted."),
+        new DialogueLine("Drifter", "All right. I'm in.")
+    };
 
     [Header("Next Scene")]
     public bool transitionToNextScene = true;
@@ -16,6 +32,7 @@ public class Stage1GoalGate : MonoBehaviour
     public Vector3 fallbackExitDirection = Vector3.forward;
 
     bool used;
+    bool busy;
 
     void Reset()
     {
@@ -26,31 +43,47 @@ public class Stage1GoalGate : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (used) return;
+        if (busy) return;
 
         PlayerController player = other.GetComponentInParent<PlayerController>();
         if (player == null) return;
 
-        if (requireKeyItem)
+        StartCoroutine(GateRoutine(player));
+    }
+
+    IEnumerator GateRoutine(PlayerController player)
+    {
+        busy = true;
+
+        bool hasKeyItem =
+            Stage1ObjectiveState.Instance != null &&
+            Stage1ObjectiveState.Instance.hasKeyItem;
+
+        if (requireKeyItem && !hasKeyItem)
         {
-            if (Stage1ObjectiveState.Instance == null ||
-                !Stage1ObjectiveState.Instance.hasKeyItem)
-            {
-                Debug.Log("[Stage1] 카드키가 없어 목표 건물에 들어갈 수 없습니다.");
-                return;
-            }
+            yield return ShowDialogue(keyMissingLines);
+            busy = false;
+            yield break;
         }
 
         used = true;
 
-        Debug.Log("[Stage1] 스테이지 클리어");
+        if (showUnlockedDialogueBeforeTransition)
+            yield return ShowDialogue(keyAcceptedLines);
+
+        Debug.Log("[Stage1] Stage clear.");
 
         if (!transitionToNextScene)
-            return;
+        {
+            busy = false;
+            yield break;
+        }
 
         if (SceneTransitionDirector.Instance == null)
         {
-            Debug.LogWarning("[Stage1GoalGate] SceneTransitionDirector가 없습니다.");
-            return;
+            Debug.LogWarning("[Stage1GoalGate] SceneTransitionDirector is missing.");
+            busy = false;
+            yield break;
         }
 
         Vector3 exitDir = GetExitDirection(player.transform);
@@ -59,6 +92,32 @@ public class Stage1GoalGate : MonoBehaviour
             nextSceneName,
             nextEntryId,
             exitDir
+        );
+
+        busy = false;
+    }
+
+    IEnumerator ShowDialogue(DialogueLine[] lines)
+    {
+        if (lines == null || lines.Length == 0)
+            yield break;
+
+        DialogueManager dialogue = DialogueManager.Instance;
+
+        if (dialogue == null)
+            dialogue = FindFirstObjectByType<DialogueManager>();
+
+        if (dialogue == null)
+        {
+            Debug.LogWarning("[Stage1GoalGate] DialogueManager is missing.");
+            yield break;
+        }
+
+        yield return dialogue.Show(
+            lines,
+            lockPlayer: true,
+            forceExitShadow: true,
+            pauseGame: true
         );
     }
 

@@ -6,6 +6,11 @@ public class RangedEnemyController : EnemyController
     public Transform muzzle;
     public EnemyProjectile projectilePrefab;
 
+    [Header("3D Projectile Aim")]
+    public bool aimAtPlayerColliderCenter = true;
+    public float projectileAimExtraYOffset = 0f;
+    public float fallbackAimYOffset = 0.8f;
+
     [Header("Muzzle Offset")]
     public bool useProceduralMuzzle = true;
     public float muzzleHeight = 1.2f;
@@ -76,10 +81,7 @@ public class RangedEnemyController : EnemyController
 
         if (notSeenTimer >= config.loseChaseAfterNotSeenSeconds)
         {
-            state = State.LostWait;
-            lostWaitTimer = config.waitAfterLost;
-            notSeenTimer = 0f;
-            StopMove();
+            EnterVisualAlertState(1f);
             vision.ResetDetection();
             return;
         }
@@ -96,13 +98,13 @@ public class RangedEnemyController : EnemyController
 
         FaceDirection(moveDir);
 
-        //멈춰서 조준할 때도 비주얼 플립이 이 방향을 따라가게 한다.
+        // 멈춰서 조준할 때도 비주얼 플립이 이 방향을 따라가게 한다.
         if (moveDir.sqrMagnitude > 0.0001f)
             lastMoveDir = moveDir;
 
         if (distance > rangedConfig.attackRange)
         {
-            MoveInDirection(moveDir, config.moveSpeed);
+            MoveToPosition(targetPos, config.moveSpeed, rangedConfig.attackRange);
             return;
         }
 
@@ -112,7 +114,7 @@ public class RangedEnemyController : EnemyController
             canSeeTarget ||
             notSeenTimer <= rangedConfig.fireAfterLostSightSeconds;
 
-        //아직 충분히 몸을 안 돌렸으면 이번 프레임은 회전만 하고 발사는 안 한다.
+        // 아직 충분히 몸을 안 돌렸으면 이번 프레임은 회전만 하고 발사는 안 한다.
         if (!IsFacingDirectionEnough(moveDir))
             return;
 
@@ -175,19 +177,36 @@ public class RangedEnemyController : EnemyController
         if (shootDir.sqrMagnitude <= 0.0001f)
             shootDir = transform.forward;
 
-        shootDir.y = 0f;
-        shootDir.Normalize();
+        // 총구 위치 계산과 적 회전은 수평 방향 기준으로 유지합니다.
+        // 그래야 스프라이트가 위/아래로 기울지 않습니다.
+        Vector3 flatShootDir = shootDir;
+        flatShootDir.y = 0f;
 
-        Vector3 spawnPos = GetProjectileSpawnPosition(shootDir);
+        if (flatShootDir.sqrMagnitude <= 0.0001f)
+            flatShootDir = transform.forward;
+
+        flatShootDir.y = 0f;
+        flatShootDir.Normalize();
+
+        Vector3 spawnPos = GetProjectileSpawnPosition(flatShootDir);
+
+        // 실제 총알 방향은 플레이어 Collider 중심을 향하게 합니다.
+        Vector3 aimPoint = GetProjectileAimPoint();
+        Vector3 finalShootDir = aimPoint - spawnPos;
+
+        if (finalShootDir.sqrMagnitude <= 0.0001f)
+            finalShootDir = flatShootDir;
+        else
+            finalShootDir.Normalize();
 
         EnemyProjectile projectile = Instantiate(
             projectilePrefab,
             spawnPos,
-            Quaternion.LookRotation(shootDir, Vector3.up)
+            Quaternion.LookRotation(finalShootDir, Vector3.up)
         );
 
         projectile.Initialize(
-            shootDir,
+            finalShootDir,
             rangedConfig.projectileSpeed,
             rangedConfig.projectileDamagePips,
             rangedConfig.projectileLifeTime,
@@ -259,6 +278,55 @@ public class RangedEnemyController : EnemyController
             sign *= -1f;
 
         return sign;
+    }
+
+    Vector3 GetProjectileAimPoint()
+    {
+        if (aimAtPlayerColliderCenter && player != null)
+        {
+            Collider bestCollider = FindBestPlayerCollider();
+
+            if (bestCollider != null)
+                return bestCollider.bounds.center + Vector3.up * projectileAimExtraYOffset;
+        }
+
+        if (player != null)
+            return player.position + Vector3.up * fallbackAimYOffset;
+
+        return transform.position + transform.forward;
+    }
+
+    Collider FindBestPlayerCollider()
+    {
+        if (player == null)
+            return null;
+
+        Collider[] colliders = player.GetComponentsInChildren<Collider>(true);
+
+        Collider best = null;
+        float bestScore = -1f;
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider col = colliders[i];
+            if (col == null) continue;
+            if (!col.enabled) continue;
+            if (!col.gameObject.activeInHierarchy) continue;
+
+            // Trigger 전용 판정 콜라이더는 조준 기준에서 제외하는 편이 안전합니다.
+            if (col.isTrigger) continue;
+
+            Vector3 size = col.bounds.size;
+            float score = size.x * size.y * size.z;
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = col;
+            }
+        }
+
+        return best;
     }
 
 #if UNITY_EDITOR

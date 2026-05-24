@@ -35,20 +35,21 @@ public class EnemyProjectile : MonoBehaviour
     }
 
     public void Initialize(
-        Vector3 direction,
-        float speed,
-        int damage,
-        float destroyAfter,
-        string targetTag,
-        Collider ownerCollider = null
-    )
+    Vector3 direction,
+    float speed,
+    int damage,
+    float destroyAfter,
+    string targetTag,
+    Collider ownerCollider = null
+)
     {
         moveDirection = direction.sqrMagnitude > 0.0001f
             ? direction.normalized
             : transform.forward;
 
-        moveDirection.y = 0f;
-        moveDirection.Normalize();
+        // 제거해야 함:
+        // moveDirection.y = 0f;
+        // moveDirection.Normalize();
 
         moveSpeed = speed;
         damagePips = damage;

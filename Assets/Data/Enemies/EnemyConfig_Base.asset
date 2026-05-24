@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8b657ad95b392844afce6b3856d6a06, type: 3}
   m_Name: EnemyConfig_Base
   m_EditorClassIdentifier: Assembly-CSharp::EnemyConfig
-  viewDistance: 6
-  attackViewDistance: 5
+  viewDistance: 7
+  attackViewDistance: 4
   viewAngle: 90
   targetPointYOffset: 0.8
-  detectTimeRequired: 1.2
+  detectTimeRequired: 0.6
   alertDecaySeconds: 1
   loseSightGrace: 0.2
   lostAlertStart01: 0.6

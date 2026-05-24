@@ -249,7 +249,7 @@ MonoBehaviour:
   groundCheckDistance: 0.2
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
   cam: {fileID: 0}
   visualBillboard: {fileID: 4309248972922047345}
   flipRoot: {fileID: 1069997380683525039}
@@ -280,7 +280,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShadowInteractController
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
   occluderMask:
     serializedVersion: 2
     m_Bits: 896
@@ -312,6 +312,7 @@ MonoBehaviour:
   movingHostGraceSeconds: 0.12
   movingHostSampleMarginFactor: 0.85
   lightProbeSurfaceOffset: 0.03
+  shadowTransitionInvulnerableSeconds: 0.6
 --- !u!114 &5729267741954925929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328,7 +329,7 @@ MonoBehaviour:
   cam: {fileID: 0}
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
   surfaceMask:
     serializedVersion: 2
     m_Bits: 960

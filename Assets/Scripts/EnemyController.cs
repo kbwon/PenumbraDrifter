@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -21,6 +22,13 @@ public class EnemyController : MonoBehaviour
     public float maxFallSpeed = -35f;
     public float groundedStickVelocity = -2f;
     public float groundCheckDistance = 0.2f;
+
+    [Header("Navigation")]
+    public bool useNavMeshMovement = false;
+    public NavMeshAgent agent;
+    public float navSampleMaxDistance = 1.5f;
+    public float destinationUpdateMinDistance = 0.15f;
+    public float navArriveExtraDistance = 0.08f;
 
     [Header("View")]
     public Transform cam;
@@ -103,6 +111,9 @@ public class EnemyController : MonoBehaviour
         if (!rb) rb = GetComponent<Rigidbody>();
         if (!bodyCollider) bodyCollider = GetComponent<CapsuleCollider>();
 
+        if (useNavMeshMovement && !agent)
+            agent = GetComponent<NavMeshAgent>();
+
         if (!vision) vision = GetComponent<EnemyVision>();
         if (!alertUI) alertUI = GetComponentInChildren<EnemyAlertUI>(true);
         if (!anim) anim = GetComponentInChildren<Animator>();
@@ -119,7 +130,10 @@ public class EnemyController : MonoBehaviour
         }
 
         homePos = transform.position;
+
         SetupRigidbody();
+        SetupNavMeshAgent();
+
         ApplyFlip(true);
     }
 
@@ -155,6 +169,12 @@ public class EnemyController : MonoBehaviour
 
         if (vision && player != null)
             vision.SetTarget(player);
+
+        if (useNavMeshMovement)
+            SnapAgentToNavMeshIfNeeded();
+
+        // 추가: NavMesh 보정 이후의 실제 위치를 원래 자리로 저장
+        ResetHomePositionToCurrent();
     }
 
     protected virtual void Update()
@@ -221,6 +241,23 @@ public class EnemyController : MonoBehaviour
     protected virtual void FixedUpdate()
     {
         if (!rb) return;
+
+        if (useNavMeshMovement)
+        {
+            if (IsUsingNavMesh())
+            {
+                Vector3 v = agent.velocity;
+                v.y = 0f;
+
+                if (v.sqrMagnitude > 0.0001f)
+                {
+                    desiredVelocity = v;
+                    lastMoveDir = v.normalized;
+                }
+            }
+
+            return;
+        }
 
         UpdateGroundState();
         ApplyMovement();
@@ -291,7 +328,8 @@ public class EnemyController : MonoBehaviour
 
     protected virtual bool HasRequiredRefs()
     {
-        return config && player && vision && rb && bodyCollider;
+        bool navReady = !useNavMeshMovement || agent != null;
+        return config && player && vision && rb && bodyCollider && navReady;
     }
 
     protected virtual void UpdateIdleState()
@@ -380,10 +418,9 @@ public class EnemyController : MonoBehaviour
                 Time.deltaTime / Mathf.Max(0.01f, config.soundAlertFillSeconds)
             );
 
-            if (distance > config.soundStopDistance)
+            if (!HasReachedPosition(lastHeardPos, config.soundStopDistance))
             {
-                FaceDirection(moveDir);
-                MoveInDirection(moveDir, config.soundMoveSpeed);
+                MoveToPosition(lastHeardPos, config.soundMoveSpeed, config.soundStopDistance);
                 return;
             }
 
@@ -584,25 +621,43 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        MoveInDirection(moveDir, config.moveSpeed);
+        MoveToPosition(player.position, config.moveSpeed, attackStartRange);
     }
 
     protected virtual void ReturnHome()
     {
-        Vector3 moveDir = GetFlatDirectionTo(homePos, out float distance);
-
-        if (distance <= 0.1f)
+        if (HasReachedPosition(homePos, 0.1f))
         {
-            Vector3 pos = rb.position;
+            Vector3 pos = transform.position;
             pos.x = homePos.x;
             pos.z = homePos.z;
-            rb.position = pos;
+
+            if (IsUsingNavMesh())
+            {
+                if (TryResolveNavPosition(homePos, out Vector3 navHome))
+                    agent.Warp(navHome);
+                else
+                    agent.Warp(pos);
+            }
+            else if (rb != null)
+            {
+                rb.position = pos;
+            }
+            else
+            {
+                transform.position = pos;
+            }
+
             EnterIdleState();
             return;
         }
 
-        FaceDirection(moveDir);
-        MoveInDirection(moveDir, config.returnSpeed);
+        bool moved = MoveToPosition(homePos, config.returnSpeed, 0.1f);
+
+        if (!moved)
+        {
+            Debug.LogWarning($"{name}: Cannot return home. Check NavMesh around homePos={homePos}", this);
+        }
     }
 
     protected virtual void HandleNoise(GameNoise noise)
@@ -667,6 +722,244 @@ public class EnemyController : MonoBehaviour
         return dir.normalized;
     }
 
+    protected bool IsUsingNavMesh()
+    {
+        return useNavMeshMovement
+            && agent != null
+            && agent.enabled
+            && agent.isOnNavMesh;
+    }
+
+    bool HasNavAgentForSampling()
+    {
+        return useNavMeshMovement
+            && agent != null
+            && agent.enabled;
+    }
+
+    bool TryFindSurfaceBelow(Vector3 sourcePos, out Vector3 surfacePoint)
+    {
+        surfacePoint = sourcePos;
+
+        if (groundMask.value == 0)
+            return false;
+
+        float bodyHeight = bodyCollider != null ? GetColliderHeightWorld(bodyCollider) : 2f;
+
+        float rayUp = Mathf.Max(2f, bodyHeight);
+        float rayDown = Mathf.Max(8f, bodyHeight + navSampleMaxDistance + 4f);
+
+        Vector3 origin = sourcePos + Vector3.up * rayUp;
+
+        if (Physics.Raycast(
+            origin,
+            Vector3.down,
+            out RaycastHit hit,
+            rayDown,
+            groundMask,
+            QueryTriggerInteraction.Ignore))
+        {
+            surfacePoint = hit.point;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool TryResolveNavPosition(Vector3 sourcePos, out Vector3 navPos)
+    {
+        navPos = sourcePos;
+
+        if (!HasNavAgentForSampling())
+            return false;
+
+        int areaMask = agent.areaMask;
+
+        // 1순위: 현재 좌표 아래의 실제 바닥 표면을 찾고, 그 지점의 NavMesh를 찾는다.
+        // 다층 구조에서 아래층/옆 플랫폼을 잘못 잡는 문제를 줄이기 위한 핵심 처리.
+        if (TryFindSurfaceBelow(sourcePos, out Vector3 surfacePoint))
+        {
+            float surfaceSampleDistance = Mathf.Max(0.5f, navSampleMaxDistance);
+
+            if (NavMesh.SamplePosition(
+                surfacePoint,
+                out NavMeshHit surfaceHit,
+                surfaceSampleDistance,
+                areaMask))
+            {
+                navPos = surfaceHit.position;
+                return true;
+            }
+        }
+
+        // 2순위: 기존 방식. 단, 너무 큰 값에만 의존하지 않도록 한다.
+        if (NavMesh.SamplePosition(
+            sourcePos,
+            out NavMeshHit directHit,
+            navSampleMaxDistance,
+            areaMask))
+        {
+            navPos = directHit.position;
+            return true;
+        }
+
+        // 3순위: 캐릭터 루트가 바닥보다 높게 잡힌 경우를 위한 최후 보정.
+        float bodyHeight = bodyCollider != null ? GetColliderHeightWorld(bodyCollider) : 2f;
+        float fallbackDistance = Mathf.Max(navSampleMaxDistance, bodyHeight + 0.5f);
+
+        if (NavMesh.SamplePosition(
+            sourcePos,
+            out NavMeshHit fallbackHit,
+            fallbackDistance,
+            areaMask))
+        {
+            navPos = fallbackHit.position;
+            return true;
+        }
+
+        return false;
+    }
+
+    void SetupNavMeshAgent()
+    {
+        if (!useNavMeshMovement)
+            return;
+
+        if (agent == null)
+        {
+            Debug.LogWarning($"{name}: useNavMeshMovement가 켜져 있지만 NavMeshAgent가 없습니다. 기존 Rigidbody 이동으로 되돌립니다.", this);
+            useNavMeshMovement = false;
+
+            if (rb != null)
+                rb.isKinematic = false;
+
+            return;
+        }
+
+        agent.updateRotation = false; // 회전은 기존 FaceDirection / 스프라이트 플립이 담당
+        agent.updateUpAxis = true;
+        agent.autoBraking = true;
+
+        if (config != null)
+        {
+            agent.speed = config.moveSpeed;
+            agent.stoppingDistance = config.stopDistance;
+        }
+    }
+
+    void SnapAgentToNavMeshIfNeeded()
+    {
+        if (!HasNavAgentForSampling())
+            return;
+
+        if (agent.isOnNavMesh)
+            return;
+
+        if (TryResolveNavPosition(transform.position, out Vector3 navPos))
+        {
+            agent.Warp(navPos);
+        }
+        else
+        {
+            Debug.LogWarning($"{name}: NavMesh 위에 있지 않습니다. 적 시작 위치 또는 groundMask를 확인하세요.", this);
+        }
+    }
+
+    protected bool HasReachedPosition(Vector3 targetPos, float stopDistance)
+    {
+        float arriveDistance = Mathf.Max(0.01f, stopDistance) + navArriveExtraDistance;
+
+        if (IsUsingNavMesh())
+        {
+            if (agent.pathPending)
+                return false;
+
+            if (agent.hasPath)
+                return agent.remainingDistance <= arriveDistance;
+        }
+
+        Vector3 flat = targetPos - transform.position;
+        flat.y = 0f;
+        return flat.sqrMagnitude <= arriveDistance * arriveDistance;
+    }
+
+    protected virtual bool MoveToPosition(Vector3 targetPos, float speed, float stopDistance)
+    {
+        Vector3 moveDir = GetFlatDirectionTo(targetPos, out float distance);
+
+        if (IsUsingNavMesh())
+        {
+            if (!TryResolveNavPosition(targetPos, out Vector3 destination))
+            {
+                StopMove();
+                return false;
+            }
+
+            agent.speed = speed;
+            agent.stoppingDistance = Mathf.Max(0.01f, stopDistance);
+            agent.isStopped = false;
+
+            bool shouldUpdateDestination =
+                !agent.hasPath ||
+                (agent.destination - destination).sqrMagnitude >
+                destinationUpdateMinDistance * destinationUpdateMinDistance;
+
+            if (shouldUpdateDestination)
+            {
+                NavMeshPath path = new NavMeshPath();
+
+                if (!agent.CalculatePath(destination, path) ||
+                    path.status != NavMeshPathStatus.PathComplete)
+                {
+                    StopMove();
+                    return false;
+                }
+
+                if (!agent.SetDestination(destination))
+                {
+                    StopMove();
+                    return false;
+                }
+            }
+
+            Vector3 navDir = agent.desiredVelocity;
+            navDir.y = 0f;
+
+            if (navDir.sqrMagnitude <= 0.0001f && agent.hasPath)
+            {
+                navDir = agent.steeringTarget - transform.position;
+                navDir.y = 0f;
+            }
+
+            if (navDir.sqrMagnitude > 0.0001f)
+            {
+                Vector3 flatDir = navDir.normalized;
+                desiredVelocity = flatDir * speed;
+                lastMoveDir = flatDir;
+                FaceDirection(flatDir);
+            }
+            else
+            {
+                desiredVelocity = Vector3.zero;
+
+                if (moveDir.sqrMagnitude > 0.0001f)
+                    FaceDirection(moveDir);
+            }
+
+            return true;
+        }
+
+        if (distance <= stopDistance)
+        {
+            StopMove();
+            return true;
+        }
+
+        FaceDirection(moveDir);
+        MoveInDirection(moveDir, speed);
+        return true;
+    }
+
     protected void FaceDirection(Vector3 dir)
     {
         if (dir.sqrMagnitude <= 0.0001f)
@@ -704,10 +997,23 @@ public class EnemyController : MonoBehaviour
     protected virtual void StopMove()
     {
         desiredVelocity = Vector3.zero;
+
+        if (IsUsingNavMesh())
+        {
+            agent.isStopped = true;
+
+            if (agent.hasPath)
+                agent.ResetPath();
+
+            agent.velocity = Vector3.zero;
+        }
     }
 
     protected virtual void ApplyMovement()
     {
+        if (useNavMeshMovement)
+            return;
+
         Vector3 v = rb.linearVelocity;
 
         float y = v.y;
@@ -865,6 +1171,9 @@ public class EnemyController : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
+
+        // NavMeshAgent가 이동을 담당할 때는 Rigidbody가 물리 이동을 하면 안 된다.
+        rb.isKinematic = useNavMeshMovement;
     }
 
     float GetColliderHeightWorld(CapsuleCollider col)
@@ -1011,10 +1320,21 @@ public class EnemyController : MonoBehaviour
         finalPos.x = targetPosition.x;
         finalPos.z = targetPosition.z;
 
-        if (rb != null)
+        if (IsUsingNavMesh())
+        {
+            if (NavMesh.SamplePosition(finalPos, out NavMeshHit hit, navSampleMaxDistance, agent.areaMask))
+                agent.Warp(hit.position);
+            else
+                agent.Warp(finalPos);
+        }
+        else if (rb != null)
+        {
             rb.position = finalPos;
+        }
         else
+        {
             transform.position = finalPos;
+        }
 
         ResetHomePositionToCurrent();
         EnterIdleState();
@@ -1030,42 +1350,45 @@ public class EnemyController : MonoBehaviour
 
     void UpdateEntryMoveState()
     {
-        Vector3 current = transform.position;
-        Vector3 target = entryMoveTarget;
-
-        current.y = 0f;
-        target.y = 0f;
-
-        Vector3 toTarget = target - current;
-        float distance = toTarget.magnitude;
-
-        if (distance <= entryStopDistance)
+        if (HasReachedPosition(entryMoveTarget, entryStopDistance))
         {
             entryMoveActive = false;
             StopMove();
             return;
         }
 
-        Vector3 dir = toTarget / Mathf.Max(0.0001f, distance);
-
-        FaceDirection(dir);
-        MoveInDirection(dir, entryMoveSpeed);
+        MoveToPosition(entryMoveTarget, entryMoveSpeed, entryStopDistance);
     }
 
     public void ResetHomePositionToCurrent()
     {
+        if (IsUsingNavMesh())
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, navSampleMaxDistance, agent.areaMask))
+            {
+                homePos = hit.position;
+                agent.Warp(hit.position);
+                return;
+            }
+        }
+
         homePos = transform.position;
     }
 
     protected void ZeroHorizontalVelocity()
     {
+        if (IsUsingNavMesh())
+        {
+            agent.velocity = Vector3.zero;
+            return;
+        }
+
         if (rb == null) return;
+        if (rb.isKinematic) return;
 
         Vector3 v = rb.linearVelocity;
         v.x = 0f;
         v.z = 0f;
         rb.linearVelocity = v;
     }
-
-
 }

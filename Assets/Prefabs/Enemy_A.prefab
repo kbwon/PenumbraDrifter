@@ -377,7 +377,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4457743611965175682}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0.95599985, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -556,6 +556,8 @@ GameObject:
   - component: {fileID: 5107748750934640638}
   - component: {fileID: 4683864933924978452}
   - component: {fileID: 1028108380585962846}
+  - component: {fileID: 3356077319400450856}
+  - component: {fileID: 3985078295453685821}
   m_Layer: 8
   m_Name: Enemy_A
   m_TagString: Enemy
@@ -653,12 +655,17 @@ MonoBehaviour:
   bodyCollider: {fileID: 0}
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 192
   useCustomGravity: 1
   gravity: -25
   maxFallSpeed: -35
   groundedStickVelocity: -2
   groundCheckDistance: 0.2
+  useNavMeshMovement: 1
+  agent: {fileID: 0}
+  navSampleMaxDistance: 2
+  destinationUpdateMinDistance: 0.15
+  navArriveExtraDistance: 0.08
   cam: {fileID: 0}
   visualBillboard: {fileID: 1734234102395704660}
   flipRoot: {fileID: 7921847732654814841}
@@ -689,6 +696,51 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   config: {fileID: 11400000, guid: 983246bb0332b2c439e20fd49d2882b2, type: 2}
+--- !u!114 &3356077319400450856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7110371121047906416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1804b63e904ea3e4db8ffc2c2137de75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyVisionGroundVisualizer
+  vision: {fileID: 1028108380585962846}
+  alertMaterial: {fileID: 2100000, guid: b3d89bb9bd2a55a4a9740a5ada49f4dc, type: 2}
+  attackMaterial: {fileID: 2100000, guid: cf1ac29fffc2b8046bf9ca6ececc9f8c, type: 2}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 64
+  groundYOffset: 0.035
+  groundRayHeight: 3
+  groundRayDistance: 8
+  segments: 36
+  hideWhenNoConfig: 1
+--- !u!195 &3985078295453685821
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7110371121047906416}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 1
+  m_Speed: 3.5
+  m_Acceleration: 12
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 4
+  m_BaseOffset: 2
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &7995563734771962127
 GameObject:
   m_ObjectHideFlags: 0

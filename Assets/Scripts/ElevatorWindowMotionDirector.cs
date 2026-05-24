@@ -28,6 +28,12 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
     public int shakePixels = 14;
     public float shakeFrequency = 35f;
 
+    [Header("Native Window Move")]
+    public bool useNativeWindowMoveOnWindows = true;
+    public bool useNativePrimaryScreenSize = true;
+
+    bool windowShakeActive;
+
     [Header("Debug")]
     public bool debugLog = true;
 
@@ -83,6 +89,20 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
             SpecialStageDebugHUD.Log("Window", "StopMotion", this);
     }
 
+    void MoveWindowTo(int px, int py)
+    {
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+    if (useNativeWindowMoveOnWindows)
+    {
+        if (NativeWindowMover.TryMove(px, py))
+            return;
+    }
+#endif
+
+#if !UNITY_EDITOR
+    MoveWindowTo(px, py);
+#endif
+    }
     public IEnumerator ShakeWindow(float seconds)
     {
         if (!useRealWindowMotion)
@@ -145,7 +165,18 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
         yield return null;
 
         int displayWidth = displayInfo.width;
-        int displayHeight = displayInfo.height;
+int displayHeight = displayInfo.height;
+
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
+{
+    if (NativeWindowMover.TryGetPrimaryScreenSize(out int nativeWidth, out int nativeHeight))
+    {
+        displayWidth = nativeWidth;
+        displayHeight = nativeHeight;
+    }
+}
+#endif
 
         x = Mathf.Max(xMargin, (displayWidth - stageWindowWidth) / 2);
 
@@ -160,7 +191,7 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
 
         currentY = initialBottomY;
 
-        Screen.MoveMainWindowTo(displayInfo, new Vector2Int(x, initialBottomY));
+        MoveWindowTo(x, initialBottomY);
 
         initialized = true;
 
@@ -181,12 +212,12 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
                 }
             }
 
-            if (Time.unscaledTime - lastApplyTime >= moveApplyInterval)
+            if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
             {
                 lastApplyTime = Time.unscaledTime;
 
                 int y = Mathf.RoundToInt(currentY);
-                Screen.MoveMainWindowTo(displayInfo, new Vector2Int(x, y)); 
+                MoveWindowTo(x, y);
             }
 
             yield return null;
@@ -195,27 +226,30 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
     }
 
 #if !UNITY_EDITOR
-    IEnumerator ShakeRoutine(float seconds)
+IEnumerator ShakeRoutine(float seconds)
+{
+    windowShakeActive = true;
+
+    float t = 0f;
+
+    while (t < seconds && initialized && moving)
     {
-        float t = 0f;
+        t += Time.unscaledDeltaTime;
 
-        while (t < seconds && initialized && moving)
-        {
-            t += Time.unscaledDeltaTime;
+        float sx = Mathf.Sin(Time.unscaledTime * shakeFrequency) * shakePixels;
+        float sy = Mathf.Cos(Time.unscaledTime * shakeFrequency * 0.73f) * shakePixels;
 
-            float sx = Mathf.Sin(Time.unscaledTime * shakeFrequency) * shakePixels;
-            float sy = Mathf.Cos(Time.unscaledTime * shakeFrequency * 0.73f) * shakePixels;
+        int px = x + Mathf.RoundToInt(sx);
+        int py = Mathf.RoundToInt(currentY + sy);
 
-            int px = x + Mathf.RoundToInt(sx);
-            int py = Mathf.RoundToInt(currentY + sy);
+        MoveWindowTo(px, py);
 
-            Screen.MoveMainWindowTo(displayInfo, new Vector2Int(px, py));
-
-            yield return new WaitForSecondsRealtime(moveApplyInterval);
-        }
-
-        Screen.MoveMainWindowTo(displayInfo, new Vector2Int(x, Mathf.RoundToInt(currentY)));
+        yield return new WaitForSecondsRealtime(moveApplyInterval);
     }
+
+    windowShakeActive = false;
+    MoveWindowTo(x, Mathf.RoundToInt(currentY));
+}
 #endif
 
     void RestoreWindow()
