@@ -16,6 +16,9 @@ public class ShadowAssassination : MonoBehaviour
     public Animator anim;
     public string assassinateTriggerName = "shadowAssassinate";
 
+    [Header("Debug")]
+    public bool warnWhenNoTarget = false;
+
     readonly Collider[] overlapResults = new Collider[16];
 
     bool isAssassinating;
@@ -58,7 +61,9 @@ public class ShadowAssassination : MonoBehaviour
 
         if (pendingTarget == null)
         {
-            Debug.LogWarning("[Assassination] No valid target found. Check enemyMask, distance, collider layer, and canBeAssassinated.");
+            if (warnWhenNoTarget)
+                Debug.LogWarning("[Assassination] No valid target found. Check enemyMask, distance, collider layer, and canBeAssassinated.");
+
             return;
         }
 
@@ -120,9 +125,6 @@ public class ShadowAssassination : MonoBehaviour
 
         pendingTarget = null;
 
-        if (feedback != null)
-            feedback.ResetVisualScale();
-
         ForceExitShadowForAssassination();
 
         if (playerController != null)
@@ -173,6 +175,8 @@ public class ShadowAssassination : MonoBehaviour
             if (!enemy.gameObject.activeInHierarchy) continue;
             if (enemy.config == null) continue;
             if (!enemy.config.canBeAssassinated) continue;
+
+            if (!enemy.CanStartShadowAssassination()) continue;
 
             Vector3 enemyPos = enemy.transform.position;
             enemyPos.y = 0f;

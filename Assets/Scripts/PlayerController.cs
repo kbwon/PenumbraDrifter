@@ -831,4 +831,46 @@ public class PlayerController : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
+
+    public void ForceNormalModeAfterExternalShadowExit(bool unlockInput)
+    {
+        if (shadowCtrl != null)
+        {
+            shadowCtrl.ForceExitShadowMode();
+            shadowCtrl.ClearSurfaceAnchor();
+            shadowCtrl.ClearMovingShadowHost();
+        }
+
+        prevInShadow = false;
+        isShadowTransitionPlaying = false;
+        scriptedMoveActive = false;
+
+        moveInput = Vector2.zero;
+        moveDir = Vector3.zero;
+
+        if (rb != null)
+        {
+            Vector3 v = rb.linearVelocity;
+            v.x = 0f;
+            v.z = 0f;
+            rb.linearVelocity = v;
+        }
+
+        if (anim != null)
+        {
+            anim.speed = 1f;
+
+            anim.SetBool("isWalk", false);
+            anim.SetBool("Idle", true);
+            anim.SetBool("isShadowWalk", false);
+            anim.SetBool("ShadowIdle", false);
+
+            anim.SetBool("isPushing", false);
+            anim.SetBool("isPushMoving", false);
+            anim.SetBool("isCrouching", false);
+            anim.SetBool("isCrouchMoving", false);
+        }
+
+        SetInputLocked(!unlockInput, false);
+    }
 }

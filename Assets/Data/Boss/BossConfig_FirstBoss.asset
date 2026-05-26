@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75654035fe39e674f980ef184e93f720, type: 3}
+  m_Name: BossConfig_FirstBoss
+  m_EditorClassIdentifier: Assembly-CSharp::BossConfig
+  viewDistance: 8
+  attackViewDistance: 3
+  viewAngle: 90
+  targetPointYOffset: 0.8
+  detectTimeRequired: 1.2
+  alertDecaySeconds: 1
+  loseSightGrace: 0.2
+  lostAlertStart01: 0.6
+  moveSpeed: 2.5
+  returnSpeed: 2
+  soundMoveSpeed: 2
+  stopDistance: 0.8
+  turnSpeed: 12
+  waitAfterLost: 1
+  hearingSensitivity: 1
+  soundAlertFillSeconds: 0.8
+  soundAlertDecaySeconds: 1.2
+  soundInvestigateWait: 0.7
+  soundStopDistance: 0.35
+  sameNoiseIgnoreSeconds: 0.6
+  sameNoiseUpdateDistance: 1
+  soundGiveUpSeconds: 3
+  attackLockSeconds: 0.55
+  attackHitDelay: 0.18
+  attackHitRange: 1.2
+  checkRangeOnAttackHit: 1
+  contactDamagePips: 0
+  contactDamageCooldown: 0.6
+  loseChaseAfterNotSeenSeconds: 0.6
+  canBeAssassinated: 1
+  maxHp: 3
+  punchRange: 2
+  groundSlamRange: 6
+  chargeMinRange: 7
+  chargeMaxRange: 10
+  punchCooldown: 1.2
+  groundSlamCooldown: 5
+  chargeCooldown: 10
+  shadowGrabCooldown: 1.5
+  punchDamagePips: 1
+  groundSlamDamagePips: 1
+  chargeDamagePips: 1
+  groundSlamRadius: 6
+  groundSlamAngle: 120
+  chargeSpeed: 10
+  chargeDuration: 2
+  chargeHitRadius: 1.5
+  shadowGrabThrowDistance: 3

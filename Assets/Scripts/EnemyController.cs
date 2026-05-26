@@ -1159,6 +1159,11 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    public virtual bool CanStartShadowAssassination()
+    {
+        return config != null && config.canBeAssassinated;
+    }
+
     public virtual void KillByAssassination()
     {
         if (!config || !config.canBeAssassinated) return;
@@ -1207,13 +1212,7 @@ public class EnemyController : MonoBehaviour
 
         StopMove();
 
-        if (rb != null)
-        {
-            Vector3 v = rb.linearVelocity;
-            v.x = 0f;
-            v.z = 0f;
-            rb.linearVelocity = v;
-        }
+        ZeroHorizontalVelocity();
 
         if (anim != null)
             anim.SetBool(walkBoolName, false);
