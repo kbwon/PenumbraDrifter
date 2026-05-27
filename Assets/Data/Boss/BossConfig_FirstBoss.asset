@@ -54,9 +54,9 @@ MonoBehaviour:
   punchDamagePips: 1
   groundSlamDamagePips: 1
   chargeDamagePips: 1
-  groundSlamRadius: 6
+  groundSlamRadius: 7
   groundSlamAngle: 120
-  chargeSpeed: 10
+  chargeSpeed: 15
   chargeDuration: 2
-  chargeHitRadius: 1.5
+  chargeHitRadius: 2
   shadowGrabThrowDistance: 3

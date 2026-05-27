@@ -225,7 +225,7 @@ public class BossController : EnemyController
         currentAction = action;
         isAttacking = true;
         actionDamageDone = false;
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
 
         actionStartTime = Time.time;
         actionEndTime = Time.time + Mathf.Max(0.05f, duration);
@@ -287,7 +287,7 @@ public class BossController : EnemyController
 
         if (chargeTelegraph != null)
         {
-            float length = bossConfig.chargeSpeed * bossConfig.chargeDuration;
+            float length = bossConfig.chargeSpeed * bossConfig.chargeDuration / 2;
 
             chargeTelegraph.Begin(
                 transform.position,
@@ -304,7 +304,7 @@ public class BossController : EnemyController
         currentAction = BossAction.ChargeStart;
         isAttacking = true;
         actionDamageDone = false;
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
 
         actionStartTime = Time.time;
         actionEndTime = Time.time + windupFallbackSeconds;
@@ -345,7 +345,7 @@ public class BossController : EnemyController
         currentAction = BossAction.Dead;
         isAttacking = true;
         combatActive = false;
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
 
         StopMove();
         ZeroHorizontal();
@@ -466,7 +466,7 @@ public class BossController : EnemyController
         isAttacking = false;
         currentAction = BossAction.None;
         queuedAfterWindup = BossAction.None;
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
         actionDamageDone = false;
     }
 
@@ -660,7 +660,7 @@ public class BossController : EnemyController
 
         currentAction = BossAction.Charge;
         actionDamageDone = false;
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
 
         actionStartTime = Time.time;
 
@@ -766,14 +766,12 @@ public class BossController : EnemyController
 
     public void Anim_BossVulnerableStart()
     {
-        vulnerableToShadowAssassination = true;
-        OnVulnerableChanged?.Invoke(true);
+        SetVulnerable(true);
     }
 
     public void Anim_BossVulnerableEnd()
     {
-        vulnerableToShadowAssassination = false;
-        OnVulnerableChanged?.Invoke(false);
+        SetVulnerable(false);
     }
 
     public void Anim_BossActionEnd()
@@ -981,7 +979,7 @@ public class BossController : EnemyController
         if (currentAction == BossAction.ShadowGrab && playerController != null)
             playerController.ForceNormalModeAfterExternalShadowExit(true);
 
-        vulnerableToShadowAssassination = false;
+        SetVulnerable(false);
         Anim_BossActionEnd();
     }
 
@@ -1067,6 +1065,15 @@ public class BossController : EnemyController
 
         if (groundSlamTelegraph != null)
             groundSlamTelegraph.CompleteAndHide(0f);
+    }
+
+    void SetVulnerable(bool value)
+    {
+        if (vulnerableToShadowAssassination == value)
+            return;
+
+        vulnerableToShadowAssassination = value;
+        OnVulnerableChanged?.Invoke(value);
     }
 
 #if UNITY_EDITOR

@@ -99,21 +99,11 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
     }
 #endif
 
-        void MoveWindowTo(int px, int py)
-        {
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-    if (useNativeWindowMoveOnWindows)
-    {
-        if (NativeWindowMover.TryMove(px, py))
-            return;
-    }
-#endif
-
 #if !UNITY_EDITOR
     Screen.MoveMainWindowTo(displayInfo, new Vector2Int(px, py));
 #endif
-        }
     }
+
     public IEnumerator ShakeWindow(float seconds)
     {
         if (!useRealWindowMotion)
