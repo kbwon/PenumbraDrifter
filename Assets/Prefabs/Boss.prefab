@@ -339,6 +339,9 @@ MonoBehaviour:
   bossIdleShortStateName: BossIdle
   bossWalkShortStateName: WalkLoop
   bossIdleToWalkShortStateName: IdletoWalk
+  lockRootDuringWindup: 1
+  lockRotationDuringWindup: 1
+  warpAgentWhileWindupLocked: 1
 --- !u!54 &1671815189454345136
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -463,7 +466,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 3
+  m_Radius: 4
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &2679454025381580608
 MonoBehaviour:

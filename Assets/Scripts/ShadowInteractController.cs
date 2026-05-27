@@ -46,6 +46,13 @@ public class ShadowInteractController : MonoBehaviour
     [Header("Damage Protection")]
     public float shadowTransitionInvulnerableSeconds = 0.6f;
 
+    [Header("Input Guard")]
+    public PlayerController playerController;
+    public float shadowToggleCooldown = 0.25f;
+
+    bool shadowToggleLocked;
+    float nextShadowToggleAllowedTime;
+
     float shadowTransitionInvulnerableTimer;
 
     public bool IsShadowDamageProtected =>
@@ -115,6 +122,9 @@ public class ShadowInteractController : MonoBehaviour
         if (anim == null)
             anim = GetComponentInChildren<Animator>();
 
+        if (playerController == null)
+            playerController = GetComponent<PlayerController>();
+
         ApplyColliderMode(false);
         ClearMovingShadowHost();
         NotifyGaugeChanged(true);
@@ -145,16 +155,21 @@ public class ShadowInteractController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(mouseButton))
         {
+            if (!CanProcessShadowToggleInput())
+                return;
+
             if (!inShadowMode)
             {
                 if (onShadow && gauge01 > 0f)
                 {
                     EnterShadowMode();
+                    BlockShadowToggleFor(shadowToggleCooldown);
                 }
             }
             else
             {
                 ExitShadowMode();
+                BlockShadowToggleFor(shadowToggleCooldown);
             }
         }
     }
@@ -253,8 +268,15 @@ public class ShadowInteractController : MonoBehaviour
 
     public void ForceExitShadowMode()
     {
+        ForceExitShadowMode(0f);
+    }
+
+    public void ForceExitShadowMode(float inputCooldown)
+    {
         if (inShadowMode)
             ExitShadowMode();
+
+        BlockShadowToggleFor(inputCooldown);
     }
 
     void UpdateGauge(bool onShadow)
@@ -721,5 +743,43 @@ public class ShadowInteractController : MonoBehaviour
         Vector3 scale = col.transform.lossyScale;
         float radiusScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
         return col.radius * radiusScale;
+    }
+
+    public void SetShadowToggleLocked(bool locked, float extraCooldown = 0f)
+    {
+        shadowToggleLocked = locked;
+
+        if (extraCooldown > 0f)
+            nextShadowToggleAllowedTime = Mathf.Max(
+                nextShadowToggleAllowedTime,
+                Time.time + extraCooldown
+            );
+    }
+
+    void BlockShadowToggleFor(float seconds)
+    {
+        if (seconds <= 0f) return;
+
+        nextShadowToggleAllowedTime = Mathf.Max(
+            nextShadowToggleAllowedTime,
+            Time.time + seconds
+        );
+    }
+
+    bool CanProcessShadowToggleInput()
+    {
+        if (shadowToggleLocked)
+            return false;
+
+        if (Time.time < nextShadowToggleAllowedTime)
+            return false;
+
+        if (playerController != null && playerController.InputLocked)
+            return false;
+
+        if (playerController != null && playerController.IsShadowTransitionPlaying)
+            return false;
+
+        return true;
     }
 }

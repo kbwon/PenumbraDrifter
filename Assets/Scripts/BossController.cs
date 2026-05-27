@@ -73,6 +73,17 @@ public class BossController : EnemyController
     public bool lockRotationDuringWindup = true;
     public bool warpAgentWhileWindupLocked = true;
 
+    [Header("ShadowGrab Priority")]
+    public bool prioritizeShadowGrabOverPunch = true;
+    public float shadowGrabRequestGraceSeconds = 0.35f;
+
+    [Header("Telegraph")]
+    public BossGroundSlamTelegraph groundSlamTelegraph;
+    public float groundSlamTelegraphSeconds = 0.9f;
+
+    ShadowInteractController pendingShadowGrabTarget;
+    float lastShadowGrabRequestTime = -999f;
+
     Vector3 windupLockedPosition;
     Vector3 windupLockedForward;
     bool windupLocked;
@@ -102,7 +113,14 @@ public class BossController : EnemyController
     float actionEndTime;
     Vector3 chargeDir;
 
+    public BossChargeTelegraph chargeTelegraph;
+    public float chargeTelegraphSeconds = 0.9f;
+    public float chargeTelegraphWidth = 2.2f;
+
     PlayerController playerController;
+
+    public System.Action<bool> OnVulnerableChanged;
+    public bool IsVulnerable => vulnerableToShadowAssassination;
 
     protected override void Start()
     {
@@ -122,6 +140,12 @@ public class BossController : EnemyController
             playerRb = player.GetComponent<Rigidbody>();
             playerAnim = player.GetComponentInChildren<Animator>();
         }
+
+        if (groundSlamTelegraph != null && groundSlamTelegraph.groundMask.value == 0)
+            groundSlamTelegraph.groundMask = groundMask;
+
+        if (chargeTelegraph != null && chargeTelegraph.groundMask.value == 0)
+            chargeTelegraph.groundMask = groundMask;
     }
 
     protected override bool HasRequiredRefs()
@@ -160,6 +184,14 @@ public class BossController : EnemyController
 
     void UpdateBossCombat()
     {
+        if (prioritizeShadowGrabOverPunch &&
+            HasValidPendingShadowGrab() &&
+            CanStartShadowGrabNow())
+        {
+            StartShadowGrabAction(pendingShadowGrabTarget);
+            return;
+        }
+
         Vector3 dir = GetFlatDirectionTo(player.position, out float distance);
 
         if (dir.sqrMagnitude > 0.0001f)
@@ -220,6 +252,15 @@ public class BossController : EnemyController
     {
         lastGroundSlamTime = Time.time;
 
+        if (groundSlamTelegraph != null)
+        {
+            groundSlamTelegraph.Begin(
+                transform.position,
+                bossConfig.groundSlamRadius,
+                groundSlamTelegraphSeconds
+            );
+        }
+
         Vector3 slamDir = GetFlatDirectionTo(player.position, out _);
         if (slamDir.sqrMagnitude <= 0.0001f)
             slamDir = transform.forward;
@@ -227,7 +268,6 @@ public class BossController : EnemyController
         queuedAfterWindup = BossAction.GroundSlam;
         BeginAction(BossAction.WindupToGroundSlam, chargeWindupTrigger, windupFallbackSeconds);
 
-        // 바닥 내려치기 준비 중에도 미끄러지지 않도록 고정합니다.
         BeginWindupLock(slamDir);
     }
 
@@ -244,6 +284,19 @@ public class BossController : EnemyController
 
         // 돌진 준비 중에는 위치와 방향을 고정합니다.
         BeginWindupLock(chargeDir);
+
+        if (chargeTelegraph != null)
+        {
+            float length = bossConfig.chargeSpeed * bossConfig.chargeDuration;
+
+            chargeTelegraph.Begin(
+                transform.position,
+                chargeDir,
+                length,
+                chargeTelegraphWidth,
+                chargeTelegraphSeconds
+            );
+        }
     }
 
     void StartChargeLoop()
@@ -406,6 +459,8 @@ public class BossController : EnemyController
 
     void EndBossAction()
     {
+        HideAllTelegraphs();
+
         EndWindupLock();
 
         isAttacking = false;
@@ -565,30 +620,16 @@ public class BossController : EnemyController
 
     public void TryStartShadowGrab(ShadowInteractController targetShadow = null)
     {
-        if (!combatActive) return;
-        if (currentAction == BossAction.Dead) return;
+        if (targetShadow != null && targetShadow.IsInShadowMode)
+        {
+            pendingShadowGrabTarget = targetShadow;
+            lastShadowGrabRequestTime = Time.time;
+        }
 
-        // 핵심 수정:
-        // 다른 패턴 중에는 ShadowGrab이 끼어들지 못하게 합니다.
-        // GroundSlam, ChargeEnd, Punch 중 ShadowGrab이 끼어들면 Animator 상태가 꼬일 수 있습니다.
-        if (isAttacking || currentAction != BossAction.None)
+        if (!CanStartShadowGrabNow())
             return;
 
-        if (vulnerableToShadowAssassination)
-            return;
-
-        if (Time.time - lastShadowGrabTime < bossConfig.shadowGrabCooldown)
-            return;
-
-        if (targetShadow != null)
-            playerShadow = targetShadow;
-
-        lastShadowGrabTime = Time.time;
-
-        if (playerController != null)
-            playerController.SetInputLocked(true, false);
-
-        BeginAction(BossAction.ShadowGrab, shadowGrabTrigger, shadowGrabFallbackSeconds);
+        StartShadowGrabAction(targetShadow != null ? targetShadow : pendingShadowGrabTarget);
     }
 
     public void Anim_BossWindupEnd()
@@ -639,6 +680,9 @@ public class BossController : EnemyController
 
         if (chargeDir.sqrMagnitude > 0.0001f)
             FaceDirection(chargeDir);
+
+        if (chargeTelegraph != null)
+            chargeTelegraph.CompleteAndHide();
     }
 
     public void Anim_BossPunchHit()
@@ -666,32 +710,31 @@ public class BossController : EnemyController
         if (currentAction != BossAction.GroundSlam) return;
         if (actionDamageDone) return;
 
+        if (groundSlamTelegraph != null)
+            groundSlamTelegraph.CompleteAndHide();
+
         if (shockwavePrefab != null)
         {
-            Vector3 pos = shockwaveSpawnPoint != null ? shockwaveSpawnPoint.position : transform.position;
+            Vector3 pos = shockwaveSpawnPoint != null
+                ? shockwaveSpawnPoint.position
+                : transform.position;
+
             Instantiate(shockwavePrefab, pos, Quaternion.identity);
         }
 
-        if (playerHealth == null || playerHealth.isDead) return;
+        if (playerHealth == null || playerHealth.isDead)
+            return;
 
         Vector3 toPlayer = player.position - transform.position;
         toPlayer.y = 0f;
 
         float distance = toPlayer.magnitude;
-        if (distance > bossConfig.groundSlamRadius) return;
 
-        Vector3 forward = transform.forward;
-        forward.y = 0f;
-        forward.Normalize();
+        if (distance > bossConfig.groundSlamRadius)
+            return;
 
-        Vector3 dir = toPlayer.normalized;
-        float angle = Vector3.Angle(forward, dir);
-
-        if (angle <= bossConfig.groundSlamAngle * 0.5f)
-        {
-            actionDamageDone = true;
-            playerHealth.TakeDamage(bossConfig.groundSlamDamagePips);
-        }
+        actionDamageDone = true;
+        playerHealth.TakeDamage(bossConfig.groundSlamDamagePips);
     }
 
     public void Anim_BossShadowGrabPull()
@@ -724,11 +767,13 @@ public class BossController : EnemyController
     public void Anim_BossVulnerableStart()
     {
         vulnerableToShadowAssassination = true;
+        OnVulnerableChanged?.Invoke(true);
     }
 
     public void Anim_BossVulnerableEnd()
     {
         vulnerableToShadowAssassination = false;
+        OnVulnerableChanged?.Invoke(false);
     }
 
     public void Anim_BossActionEnd()
@@ -970,6 +1015,58 @@ public class BossController : EnemyController
 
         if (!string.IsNullOrEmpty(stateName))
             anim.CrossFadeInFixedTime(stateName, actionEndCrossFadeSeconds, 0);
+    }
+
+    bool HasValidPendingShadowGrab()
+    {
+        if (pendingShadowGrabTarget == null)
+            return false;
+
+        if (!pendingShadowGrabTarget.IsInShadowMode)
+            return false;
+
+        if (Time.time - lastShadowGrabRequestTime > shadowGrabRequestGraceSeconds)
+            return false;
+
+        return true;
+    }
+
+    bool CanStartShadowGrabNow()
+    {
+        if (!combatActive) return false;
+        if (currentAction == BossAction.Dead) return false;
+        if (isAttacking || currentAction != BossAction.None) return false;
+        if (vulnerableToShadowAssassination) return false;
+        if (bossConfig == null) return false;
+        if (Time.time - lastShadowGrabTime < bossConfig.shadowGrabCooldown) return false;
+
+        return true;
+    }
+
+    void StartShadowGrabAction(ShadowInteractController targetShadow)
+    {
+        if (targetShadow != null)
+            playerShadow = targetShadow;
+
+        lastShadowGrabTime = Time.time;
+        pendingShadowGrabTarget = null;
+
+        if (playerController != null)
+            playerController.SetInputLocked(true, false);
+
+        if (playerShadow != null)
+            playerShadow.SetShadowToggleLocked(true, 0.25f);
+
+        BeginAction(BossAction.ShadowGrab, shadowGrabTrigger, shadowGrabFallbackSeconds);
+    }
+
+    void HideAllTelegraphs()
+    {
+        if (chargeTelegraph != null)
+            chargeTelegraph.CompleteAndHide(0f);
+
+        if (groundSlamTelegraph != null)
+            groundSlamTelegraph.CompleteAndHide(0f);
     }
 
 #if UNITY_EDITOR

@@ -41,6 +41,13 @@ public class PlayerController : MonoBehaviour
     [Header("Scripted Move")]
     public bool scriptedMoveUsesGravity = true;
 
+    [Header("External Shadow Exit Guard")]
+    public float externalShadowExitSettleSeconds = 0.12f;
+
+    bool externalShadowControlActive;
+    bool unlockAfterExternalShadowExitSettle;
+    float externalShadowExitSettleEndTime;
+
     bool scriptedMoveActive;
     Vector3 scriptedMoveDir;
     float scriptedMoveSpeed;
@@ -227,6 +234,42 @@ public class PlayerController : MonoBehaviour
         }
 
         bool inShadow = shadowCtrl != null && shadowCtrl.IsInShadowMode;
+
+        if (externalShadowControlActive)
+        {
+            if (shadowCtrl != null && shadowCtrl.IsInShadowMode)
+                shadowCtrl.ForceExitShadowMode();
+
+            prevInShadow = false;
+            isShadowTransitionPlaying = false;
+
+            moveInput = Vector2.zero;
+            moveDir = Vector3.zero;
+
+            ForceNormalAnimatorState(false);
+
+            if (Time.time < externalShadowExitSettleEndTime)
+                return;
+
+            externalShadowControlActive = false;
+
+            if (unlockAfterExternalShadowExitSettle)
+            {
+                if (shadowCtrl != null)
+                    shadowCtrl.SetShadowToggleLocked(false, 0.2f);
+
+                SetInputLocked(false, false);
+            }
+            else
+            {
+                if (shadowCtrl != null)
+                    shadowCtrl.SetShadowToggleLocked(true, 0f);
+
+                SetInputLocked(true, false);
+            }
+
+            return;
+        }
 
         if (inShadow != prevInShadow)
         {
@@ -590,6 +633,12 @@ public class PlayerController : MonoBehaviour
     public void EndShadowTransition()
     {
         isShadowTransitionPlaying = false;
+
+        // ShadowGrab 등 외부 강제 해제 중에
+        // 예전 그림자 전환 애니메이션 이벤트가 늦게 들어와도 입력을 풀지 않습니다.
+        if (externalShadowControlActive)
+            return;
+
         SetInputLocked(false);
     }
     void UpdateFlip(Vector3 dir)
@@ -834,16 +883,23 @@ public class PlayerController : MonoBehaviour
 
     public void ForceNormalModeAfterExternalShadowExit(bool unlockInput)
     {
+        externalShadowControlActive = true;
+        unlockAfterExternalShadowExitSettle = unlockInput;
+        externalShadowExitSettleEndTime = Time.time + Mathf.Max(0.01f, externalShadowExitSettleSeconds);
+
         if (shadowCtrl != null)
         {
-            shadowCtrl.ForceExitShadowMode();
+            shadowCtrl.ForceExitShadowMode(unlockInput ? 0.2f : 0f);
             shadowCtrl.ClearSurfaceAnchor();
             shadowCtrl.ClearMovingShadowHost();
+
+            shadowCtrl.SetShadowToggleLocked(!unlockInput, unlockInput ? 0.2f : 0f);
         }
 
         prevInShadow = false;
         isShadowTransitionPlaying = false;
         scriptedMoveActive = false;
+        IsCrouching = false;
 
         moveInput = Vector2.zero;
         moveDir = Vector3.zero;
@@ -856,21 +912,28 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = v;
         }
 
-        if (anim != null)
-        {
-            anim.speed = 1f;
+        ForceNormalAnimatorState(false);
 
-            anim.SetBool("isWalk", false);
-            anim.SetBool("Idle", true);
-            anim.SetBool("isShadowWalk", false);
-            anim.SetBool("ShadowIdle", false);
+        SetInputLocked(true, false);
+    }
 
-            anim.SetBool("isPushing", false);
-            anim.SetBool("isPushMoving", false);
-            anim.SetBool("isCrouching", false);
-            anim.SetBool("isCrouchMoving", false);
-        }
+    void ForceNormalAnimatorState(bool walking)
+    {
+        if (anim == null)
+            return;
 
-        SetInputLocked(!unlockInput, false);
+        anim.speed = 1f;
+
+        anim.SetBool("isPushing", false);
+        anim.SetBool("isPushMoving", false);
+
+        anim.SetBool("isCrouching", false);
+        anim.SetBool("isCrouchMoving", false);
+
+        anim.SetBool("isShadowWalk", false);
+        anim.SetBool("ShadowIdle", false);
+
+        anim.SetBool("isWalk", walking);
+        anim.SetBool("Idle", !walking);
     }
 }
