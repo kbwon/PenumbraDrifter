@@ -34,6 +34,19 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
 
     bool windowShakeActive;
 
+    [Header("Horizontal Motion")]
+    [Range(0f, 1f)]
+    public float startX01 = 0.08f;
+
+    [Tooltip("수평 전환 1회 때 화면 가로폭 기준으로 얼마나 오른쪽으로 이동할지")]
+    public float horizontalStep01 = 0.28f;
+
+    public AnimationCurve horizontalEaseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    float currentX;
+    int displayWidthCached;
+    int displayHeightCached;
+
     [Header("Debug")]
     public bool debugLog = true;
 
@@ -179,7 +192,14 @@ if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
 }
 #endif
 
-        x = Mathf.Max(xMargin, (displayWidth - stageWindowWidth) / 2);
+        displayWidthCached = displayWidth;
+        displayHeightCached = displayHeight;
+
+        int minX = xMargin;
+        int maxX = Mathf.Max(xMargin, displayWidth - stageWindowWidth - xMargin);
+
+        currentX = Mathf.Lerp(minX, maxX, startX01);
+        x = Mathf.RoundToInt(currentX);
 
         // 처음 시작 위치: 모니터 아래쪽 안쪽에 딱 맞춤
         initialBottomY = Mathf.Max(yMargin, displayHeight - stageWindowHeight - yMargin);
@@ -218,7 +238,7 @@ if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
                 lastApplyTime = Time.unscaledTime;
 
                 int y = Mathf.RoundToInt(currentY);
-                MoveWindowTo(x, y);
+                MoveWindowTo(Mathf.RoundToInt(currentX), y);
             }
 
             yield return null;
@@ -240,7 +260,7 @@ IEnumerator ShakeRoutine(float seconds)
         float sx = Mathf.Sin(Time.unscaledTime * shakeFrequency) * shakePixels;
         float sy = Mathf.Cos(Time.unscaledTime * shakeFrequency * 0.73f) * shakePixels;
 
-        int px = x + Mathf.RoundToInt(sx);
+        int px = Mathf.RoundToInt(currentX + sx);
         int py = Mathf.RoundToInt(currentY + sy);
 
         MoveWindowTo(px, py);
@@ -249,9 +269,82 @@ IEnumerator ShakeRoutine(float seconds)
     }
 
     windowShakeActive = false;
-    MoveWindowTo(x, Mathf.RoundToInt(currentY));
+    MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
 }
 #endif
+
+    public IEnumerator MoveWindowHorizontalBy01(float delta01, float seconds)
+    {
+        if (!useRealWindowMotion)
+            yield break;
+
+#if UNITY_EDITOR
+        yield break;
+#else
+    if (!initialized)
+        yield break;
+
+    StopMotion();
+
+    int minX = xMargin;
+    int maxX = Mathf.Max(xMargin, displayWidthCached - stageWindowWidth - xMargin);
+    float widthRange = Mathf.Max(1f, maxX - minX);
+
+    float start = currentX;
+    float target = Mathf.Clamp(start + widthRange * delta01, minX, maxX);
+
+    float duration = Mathf.Max(0.01f, seconds);
+    float t = 0f;
+
+    SpecialStageDebugHUD.Log(
+        "Window",
+        $"Horizontal move start. x={start:0.0} -> {target:0.0}, seconds={seconds:0.00}",
+        this
+    );
+
+    while (t < duration)
+    {
+        t += Time.unscaledDeltaTime;
+        float u = Mathf.Clamp01(t / duration);
+
+        float k = horizontalEaseCurve != null
+            ? horizontalEaseCurve.Evaluate(u)
+            : u * u * (3f - 2f * u);
+
+        currentX = Mathf.Lerp(start, target, k);
+
+        if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
+        {
+            lastApplyTime = Time.unscaledTime;
+            MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
+        }
+
+        yield return null;
+    }
+
+    currentX = target;
+    x = Mathf.RoundToInt(currentX);
+
+    MoveWindowTo(x, Mathf.RoundToInt(currentY));
+
+    SpecialStageDebugHUD.Log("Window", $"Horizontal move end. x={x}", this);
+#endif
+    }
+
+    public void StopWindowShake()
+    {
+#if !UNITY_EDITOR
+    if (shakeRoutine != null)
+    {
+        StopCoroutine(shakeRoutine);
+        shakeRoutine = null;
+    }
+
+    windowShakeActive = false;
+
+    MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
+#endif
+    }
 
     void RestoreWindow()
     {

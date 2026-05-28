@@ -38,6 +38,22 @@ public class ElevatorStageDirector : MonoBehaviour
     public float decelSeconds = 1.0f;
     public AnimationCurve elevatorEaseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+    [Header("Building Set Rail")]
+    public ElevatorBuildingSetRailController buildingSetRail;
+
+    [Header("Horizontal Transition Tuning")]
+    public float horizontalTransitionSeconds = 3.0f;
+    public float horizontalWindowStep01 = 0.12f;
+    public float horizontalWindowStep02 = 0.10f;
+    public float horizontalPrePauseSeconds = 0.15f;
+    public float horizontalPostPauseSeconds = 0.2f;
+
+    [Header("Horizontal Transition Shake")]
+    public float horizontalCameraShakeSeconds = 2.5f;
+    public float horizontalWindowShakeSeconds = 0.35f;
+    public float horizontalEffectStartDelaySeconds = 0.1f;
+    public bool stopWindowShakeAtHorizontalEnd = true;
+
     [Header("Clear Exit")]
     public float arrivePauseSeconds = 0.5f;
     public float exitWalkSeconds = 0.8f;
@@ -57,6 +73,9 @@ public class ElevatorStageDirector : MonoBehaviour
     [Header("Player Visual Facing Lock")]
     public FaceCameraY playerVisualFaceCameraY;
     public bool lockPlayerVisualFaceCameraYDuringSpecialCamera = true;
+
+    [Header("Window Restore")]
+    public float windowRestoreWaitSeconds = 0.8f;
 
     [Header("Next Scene")]
     public string nextSceneName = "Stage_Rooftop";
@@ -106,6 +125,9 @@ public class ElevatorStageDirector : MonoBehaviour
 
         if (playerVisualFaceCameraY == null && player != null)
             playerVisualFaceCameraY = player.GetComponentInChildren<FaceCameraY>(true);
+
+        if (buildingSetRail == null)
+            buildingSetRail = FindFirstObjectByType<ElevatorBuildingSetRailController>();
     }
 
     IEnumerator StageRoutine()
@@ -177,28 +199,17 @@ public class ElevatorStageDirector : MonoBehaviour
         SpecialStageDebugHUD.Step("Combat during ascend: Wave01", this);
         yield return AscendUntilWaveCleared(wave01, normalScrollSpeed);
 
-        if (backgroundPhases != null)
-        {
-            backgroundPhases.SetPhase(midPhaseIndex);
-            SpecialStageDebugHUD.Log("Stage", "Background phase changed to Mid.", this);
-        }
+        yield return HorizontalTransitionSegment("Horizontal Transition 01", midPhaseIndex, 1, horizontalWindowStep01);
 
         SpecialStageDebugHUD.Step("Ascend 02", this);
-        yield return AscendSegmentSmooth(ascend02Seconds, fastScrollSpeed, false, true);
+        yield return AscendSegmentSmooth(ascend02Seconds, fastScrollSpeed, true, true);
 
         yield return StopOpenSpawnClose(wave02);
 
         SpecialStageDebugHUD.Step("Combat during ascend: Wave02", this);
         yield return AscendUntilWaveCleared(wave02, fastScrollSpeed);
 
-        SpecialStageDebugHUD.Step("Malfunction", this);
-        yield return MalfunctionSegment();
-
-        if (backgroundPhases != null)
-        {
-            backgroundPhases.SetPhase(highPhaseIndex);
-            SpecialStageDebugHUD.Log("Stage", "Background phase changed to High.", this);
-        }
+        yield return HorizontalTransitionSegment("Horizontal Transition 02", highPhaseIndex, 2, horizontalWindowStep02);
 
         SpecialStageDebugHUD.Step("Final ascend", this);
         yield return AscendSegmentSmooth(ascendFinalSeconds, normalScrollSpeed, true, true);
@@ -245,8 +256,18 @@ public class ElevatorStageDirector : MonoBehaviour
             yield break;
         }
 
-        exteriorScroller.Play(accelerateAtStart ? 0f : targetSpeed);
-        SyncWindowSpeedToScroller();
+        if (exteriorScroller != null)
+        {
+            exteriorScroller.Play(accelerateAtStart ? 0f : targetSpeed);
+            SyncWindowSpeedToScroller();
+            SyncBuildingSetSpeedToScroller();
+        }
+
+        if (buildingSetRail != null)
+        {
+            float startSpeed = accelerateAtStart ? 0f : targetSpeed;
+            buildingSetRail.PlayVertical(startSpeed);
+        }
 
         if (accelerateAtStart)
             yield return ChangeScrollSpeedSmooth(targetSpeed, accelSeconds);
@@ -278,6 +299,9 @@ public class ElevatorStageDirector : MonoBehaviour
             yield return ChangeScrollSpeedSmooth(0f, decelSeconds);
             exteriorScroller.Stop();
             StopWindowMotionOnly();
+
+            if (buildingSetRail != null)
+                buildingSetRail.StopVertical();
 
             SpecialStageDebugHUD.Log("Stage", "Elevator stopped for door event.", this);
         }
@@ -315,6 +339,9 @@ public class ElevatorStageDirector : MonoBehaviour
             exteriorScroller.Play(0f);
             SyncWindowSpeedToScroller();
 
+            if (buildingSetRail != null)
+                buildingSetRail.PlayVertical(0f);
+
             yield return ChangeScrollSpeedSmooth(targetSpeed, accelSeconds);
         }
 
@@ -340,7 +367,7 @@ public class ElevatorStageDirector : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / Mathf.Max(0.01f, duration));
 
             float k = elevatorEaseCurve != null
@@ -349,52 +376,14 @@ public class ElevatorStageDirector : MonoBehaviour
 
             exteriorScroller.speed = Mathf.Lerp(startSpeed, targetSpeed, k);
             SyncWindowSpeedToScroller();
+            SyncBuildingSetSpeedToScroller();
 
             yield return null;
         }
 
         exteriorScroller.speed = targetSpeed;
         SyncWindowSpeedToScroller();
-    }
-
-    IEnumerator MalfunctionSegment()
-    {
-        SpecialStageDebugHUD.Step("Malfunction start", this);
-
-        if (exteriorScroller != null)
-        {
-            exteriorScroller.Play(normalScrollSpeed);
-            yield return ChangeScrollSpeedSmooth(fastScrollSpeed * 1.4f, 0.5f);
-            yield return new WaitForSeconds(0.5f);
-
-            yield return ChangeScrollSpeedSmooth(0f, 0.35f);
-            exteriorScroller.Stop();
-        }
-
-        if (motionFX != null && windowMotion != null)
-        {
-            yield return StartCoroutine(ShakeGameAndWindow(malfunctionSeconds));
-        }
-        else if (motionFX != null)
-        {
-            yield return motionFX.Shake(malfunctionSeconds);
-        }
-        else if (windowMotion != null)
-        {
-            yield return windowMotion.ShakeWindow(malfunctionSeconds);
-        }
-        else
-        {
-            yield return new WaitForSeconds(malfunctionSeconds);
-        }
-
-        if (exteriorScroller != null)
-        {
-            exteriorScroller.Play(0f);
-            yield return ChangeScrollSpeedSmooth(normalScrollSpeed, 1.2f);
-        }
-
-        SpecialStageDebugHUD.Step("Malfunction end", this);
+        SyncBuildingSetSpeedToScroller();
     }
 
     IEnumerator ClearStage()
@@ -440,6 +429,9 @@ public class ElevatorStageDirector : MonoBehaviour
         {
             windowMotion.EndWindowMotion();
             SpecialStageDebugHUD.Log("Stage", "Window motion ended and restored.", this);
+
+            // 창이 실제로 전체화면/원래 해상도로 돌아오는 것을 보여주기 위한 대기
+            yield return new WaitForSecondsRealtime(windowRestoreWaitSeconds);
         }
 
         if (followCamera != null)
@@ -472,6 +464,78 @@ public class ElevatorStageDirector : MonoBehaviour
         playing = false;
     }
 
+    IEnumerator HorizontalTransitionSegment(
+    string label,
+    int nextBackgroundPhaseIndex,
+    int nextBuildingSetIndex,
+    float windowStep01)
+    {
+        SpecialStageDebugHUD.Step(label, this);
+
+        // 1. 수직 이동 정지
+        if (exteriorScroller != null)
+        {
+            yield return ChangeScrollSpeedSmooth(0f, 0.35f);
+            exteriorScroller.Stop();
+            StopWindowMotionOnly();
+
+            SpecialStageDebugHUD.Log("Stage", $"{label}: vertical scroll stopped.", this);
+        }
+
+        yield return new WaitForSecondsRealtime(horizontalPrePauseSeconds);
+
+        // 2. 내부 흔들림과 실제 창 흔들림을 분리합니다.
+        // 에디터에서는 motionFX만 보이고, 빌드에서는 windowMotion도 보입니다.
+        if (motionFX != null && horizontalCameraShakeSeconds > 0f)
+            StartCoroutine(motionFX.Shake(horizontalCameraShakeSeconds));
+
+        if (windowMotion != null && horizontalWindowShakeSeconds > 0f)
+            StartCoroutine(windowMotion.ShakeWindow(horizontalWindowShakeSeconds));
+
+        // 흔들림 길이에 따라 전환 시작이 늦어지지 않도록 고정 딜레이 사용
+        yield return new WaitForSecondsRealtime(horizontalEffectStartDelaySeconds);
+
+        if (backgroundPhases != null)
+        {
+            backgroundPhases.SetPhase(nextBackgroundPhaseIndex);
+            SpecialStageDebugHUD.Log(
+                "Stage",
+                $"{label}: background phase changed to {nextBackgroundPhaseIndex}.",
+                this
+            );
+        }
+
+        // 4. 실제 창은 오른쪽으로 조금 이동
+        if (windowMotion != null)
+        {
+            StartCoroutine(windowMotion.MoveWindowHorizontalBy01(
+                windowStep01,
+                horizontalTransitionSeconds
+            ));
+        }
+
+        if (buildingSetRail != null)
+            buildingSetRail.StopVertical();
+
+        // 5. 건물 레일은 왼쪽으로 천천히 이동
+        if (buildingSetRail != null)
+        {
+            StartCoroutine(buildingSetRail.TransitionTo(
+                nextBuildingSetIndex,
+                horizontalTransitionSeconds
+            ));
+        }
+
+        yield return new WaitForSecondsRealtime(horizontalTransitionSeconds);
+
+        if (stopWindowShakeAtHorizontalEnd && windowMotion != null)
+            windowMotion.StopWindowShake();
+        
+        yield return new WaitForSecondsRealtime(horizontalPostPauseSeconds);
+
+        SpecialStageDebugHUD.Step($"{label} end", this);
+    }
+
     void LockPlayerVisualFacingForSpecialStage()
     {
         if (player != null && lockPlayerBillboardDuringSpecialCamera)
@@ -500,6 +564,14 @@ public class ElevatorStageDirector : MonoBehaviour
             return;
 
         windowMotion.StopMotion();
+    }
+
+    void SyncBuildingSetSpeedToScroller()
+    {
+        if (buildingSetRail == null || exteriorScroller == null)
+            return;
+
+        buildingSetRail.SetVerticalSpeed(exteriorScroller.speed);
     }
 
     IEnumerator ShakeGameAndWindow(float seconds)

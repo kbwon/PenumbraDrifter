@@ -11,7 +11,11 @@ GameObject:
   - component: {fileID: 6570628623602621123}
   - component: {fileID: 8929360180393404929}
   - component: {fileID: 1200890750888928274}
-  m_Layer: 0
+  - component: {fileID: 7393403707989085157}
+  - component: {fileID: 2028011508545309167}
+  - component: {fileID: 3313981555532052178}
+  - component: {fileID: 8492004494095238282}
+  m_Layer: 9
   m_Name: "\uC790\uD310\uAE30"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -89,3 +93,107 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &7393403707989085157
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3557234610794949200}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.3213264, y: 0.6837744, z: 0.22}
+  m_Center: {x: 0, y: 0.31811276, z: 0}
+--- !u!54 &2028011508545309167
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3557234610794949200}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 116
+  m_CollisionDetection: 1
+--- !u!114 &3313981555532052178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3557234610794949200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d39b357d610214e47a081b00b61e5a88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PushableObject
+  rb: {fileID: 0}
+  mainCollider: {fileID: 0}
+  interactDistance: 1.2
+  pushSpeed: 1.25
+  minInputMagnitude: 0.15
+  minTowardDot: 0.05
+  snapToWorldAxis: 1
+  freezeHorizontalWhenIdle: 1
+  cameraAssist: {fileID: 0}
+  useCameraAssist: 1
+  lockPushAxisWhileHolding: 1
+  occlusionProxy: {fileID: 0}
+  useOcclusionProxy: 1
+  decidePushAxisFromTouchedFace: 1
+  oppositeInputStopDot: -0.65
+  faceAxisMargin: 0.12
+  beginPushInputDelay: 0.12
+  faceSideExtension: 0.5
+  lockFaceAxisOnBegin: 1
+  minInputIntoFaceDot: 0.35
+  allowCornerInputDisambiguation: 0
+--- !u!114 &8492004494095238282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3557234610794949200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6449032a8909394c90d0976de76e5c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PushCameraAssist
+  followCamera: {fileID: 0}
+  useAssist: 1
+  keepLockedWhilePushing: 1
+  restoreYawOnEnd: 1
+  snapImmediatelyOnLock: 0
+  snapImmediatelyOnEnd: 0
+  xAxisYaws: {x: 0, y: 180}
+  zAxisYaws: {x: 90, y: 270}
+  roundPreviousYawToStep: 1
+  restoreStepAngle: 45
+  debugLog: 0
