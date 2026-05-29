@@ -32,6 +32,16 @@ public class BossVulnerableFeedback : MonoBehaviour
     public float zoomHoldSeconds = 0.08f;
     public float zoomOutSeconds = 0.16f;
 
+    [Header("Bullet Time")]
+    public bool useBulletTime = true;
+    [Range(0.05f, 1f)] public float bulletTimeScale = 0.35f;
+    public float bulletTimeEnterSeconds = 0.04f;
+    public float bulletTimeHoldSeconds = 0.55f;
+    public float bulletTimeExitSeconds = 0.12f;
+
+    [Tooltip("VulnerableEnd가 들어오면 불릿타임을 즉시 원복합니다.")]
+    public bool stopBulletTimeOnVulnerableEnd = true;
+
     [Header("Debug")]
     public bool debugLog;
 
@@ -105,8 +115,30 @@ public class BossVulnerableFeedback : MonoBehaviour
 
         SetSpriteGlow(value);
 
-        if (value && useCameraPulse)
-            PlayCameraPulse();
+        if (value)
+        {
+            if (useCameraPulse)
+                PlayCameraPulse();
+
+            if (useBulletTime && BulletTimeController.Instance != null)
+            {
+                BulletTimeController.Instance.Play(
+                    bulletTimeScale,
+                    bulletTimeEnterSeconds,
+                    bulletTimeHoldSeconds,
+                    bulletTimeExitSeconds
+                );
+            }
+        }
+        else
+        {
+            if (stopBulletTimeOnVulnerableEnd &&
+                useBulletTime &&
+                BulletTimeController.Instance != null)
+            {
+                BulletTimeController.Instance.Stop();
+            }
+        }
     }
 
     void CacheSpriteGlowValues()

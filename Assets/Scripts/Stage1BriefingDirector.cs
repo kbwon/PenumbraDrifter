@@ -47,21 +47,35 @@ public class Stage1BriefingDirector : MonoBehaviour
     public float rotateSeconds = 2.0f;
     public float rotateDegrees = 360f;
 
+    [Header("Entry Walk Sync")]
+    public bool waitForEntryWalkBeforeBriefing = true;
+    public float maxEntryWalkWaitSeconds = 5f;
+
     [Header("Debug")]
     public bool debugLog = true;
 
     bool playing;
+    bool briefingInputLockActive;
 
     IEnumerator Start()
     {
         yield return null;
+
+        if (!playOnStart)
+            yield break;
+
         ResolveRefs();
 
-        if (playOnStart)
-        {
-            yield return new WaitForSeconds(startDelay);
+        if (!playing)
             StartCoroutine(BriefingRoutine());
-        }
+    }
+
+    void Update()
+    {
+        if (!briefingInputLockActive)
+            return;
+
+        MaintainBriefingInputLock();
     }
 
     void ResolveRefs()
@@ -110,12 +124,13 @@ public class Stage1BriefingDirector : MonoBehaviour
     IEnumerator BriefingRoutine()
     {
         playing = true;
+        briefingInputLockActive = true;
+
         ResolveRefs();
 
-        if (player != null)
-            player.SetInputLocked(true);
-
-        LockPlayerVisualForBriefing();
+        // 브리핑 시작 즉시 입력 잠금
+        SetBriefingControlLocked(true);
+        MaintainBriefingInputLock();
 
         if (shadow != null)
         {
@@ -133,6 +148,12 @@ public class Stage1BriefingDirector : MonoBehaviour
             followCamera.SetOrthoSizeImmediate(gameplayOrthoSize);
             followCamera.SnapNow();
         }
+
+        // 플레이어가 걸어 나오는 장면을 아주 잠깐 보여준 뒤 첫 대사 출력
+        if (startDelay > 0f)
+            yield return new WaitForSeconds(startDelay);
+
+        MaintainBriefingInputLock();
 
         if (dialogue != null && openingLines != null && openingLines.Length > 0)
         {
@@ -199,10 +220,8 @@ public class Stage1BriefingDirector : MonoBehaviour
             followCamera.SnapNow();
         }
 
-        UnlockPlayerVisualForBriefing();
-
-        if (player != null)
-            player.SetInputLocked(false);
+        briefingInputLockActive = false;
+        SetBriefingControlLocked(false);
 
         playing = false;
     }
@@ -247,6 +266,31 @@ public class Stage1BriefingDirector : MonoBehaviour
         followCamera.SetOrthoSizeImmediate(targetOrthoSize);
     }
 
+    IEnumerator WaitForEntryWalkFinished()
+    {
+        float t = 0f;
+
+        while (player == null && t < maxEntryWalkWaitSeconds)
+        {
+            ResolveRefs();
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        if (player == null)
+            yield break;
+
+        // 씬 전환 입장 연출이 진행 중이면 끝날 때까지 기다림
+        while (player.IsScriptedMoveActive && t < maxEntryWalkWaitSeconds)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // EndScriptedMove(false)가 실행된 직후 한 프레임 더 기다린 뒤
+        // Stage1BriefingDirector가 입력 잠금을 다시 잡도록 함
+        yield return null;
+    }
     Vector3 EstimateCurrentFocus(Vector3 fallback)
     {
         Camera cam = followCamera != null ? followCamera.CachedCamera : null;
@@ -362,5 +406,50 @@ public class Stage1BriefingDirector : MonoBehaviour
 
         if (playerVisualFaceCameraY != null && lockPlayerFaceCameraYDuringBriefing)
             playerVisualFaceCameraY.SetFacingLocked(false);
+    }
+
+    void SetBriefingControlLocked(bool locked)
+    {
+        if (player != null)
+        {
+            player.SetInputLocked(locked);
+
+            if (lockPlayerBillboardDuringBriefing)
+                player.SetBillboardLocked(locked);
+        }
+
+        if (playerVisualFaceCameraY != null && lockPlayerFaceCameraYDuringBriefing)
+            playerVisualFaceCameraY.SetFacingLocked(locked);
+
+        if (locked && shadow != null)
+        {
+            shadow.ForceExitShadowMode();
+            shadow.ClearSurfaceAnchor();
+            shadow.ClearMovingShadowHost();
+        }
+    }
+
+    void MaintainBriefingInputLock()
+    {
+        ResolveRefs();
+
+        if (player != null)
+        {
+            if (!player.InputLocked)
+                player.SetInputLocked(true);
+
+            if (lockPlayerBillboardDuringBriefing)
+                player.SetBillboardLocked(true);
+        }
+
+        if (playerVisualFaceCameraY != null && lockPlayerFaceCameraYDuringBriefing)
+            playerVisualFaceCameraY.SetFacingLocked(true);
+
+        if (shadow != null && shadow.IsInShadowMode)
+        {
+            shadow.ForceExitShadowMode();
+            shadow.ClearSurfaceAnchor();
+            shadow.ClearMovingShadowHost();
+        }
     }
 }

@@ -43,6 +43,23 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
 
     public AnimationCurve horizontalEaseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+    [Header("Vertical Edge Boost")]
+    public bool useVerticalEdgeBoost = true;
+
+    [Tooltip("창이 화면 위쪽에 가까워지면 이 Y값부터 속도를 점점 올립니다. 0보다 크면 완전히 가려지기 전부터 가속됩니다.")]
+    public float topBoostStartY = 120f;
+
+    [Tooltip("위쪽으로 사라질 때 이 픽셀 수만큼만 남으면 바로 아래쪽으로 보냅니다. 0이면 완전히 사라진 뒤 이동합니다.")]
+    public float warpWhenTopVisiblePixels = 35f;
+
+    [Tooltip("아래쪽에서 다시 나타날 때, 화면 아래 바깥으로 얼마나 숨긴 상태에서 시작할지입니다.")]
+    public float bottomReappearHiddenPixels = 20f;
+
+    [Tooltip("위/아래 가장자리에서 최대 몇 배까지 빨라질지입니다.")]
+    public float maxEdgeSpeedMultiplier = 4.0f;
+
+    public AnimationCurve verticalEdgeBoostCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     float currentX;
     int displayWidthCached;
     int displayHeightCached;
@@ -179,21 +196,22 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
         yield return null;
 
         int displayWidth = displayInfo.width;
-int displayHeight = displayInfo.height;
+        int displayHeight = displayInfo.height;
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
-{
-    if (NativeWindowMover.TryGetPrimaryScreenSize(out int nativeWidth, out int nativeHeight))
-    {
-        displayWidth = nativeWidth;
-        displayHeight = nativeHeight;
-    }
-}
+        if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
+        {
+            if (NativeWindowMover.TryGetPrimaryScreenSize(out int nativeWidth, out int nativeHeight))
+            {
+                displayWidth = nativeWidth;
+                displayHeight = nativeHeight;
+            }
+        }
 #endif
 
-        displayWidthCached = displayWidth;
         displayHeightCached = displayHeight;
+        displayWidthCached = displayWidth;
+
 
         int minX = xMargin;
         int maxX = Mathf.Max(xMargin, displayWidth - stageWindowWidth - xMargin);
@@ -221,17 +239,42 @@ if (useNativeWindowMoveOnWindows && useNativePrimaryScreenSize)
             float dt = Time.unscaledDeltaTime;
 
             if (motionSpeed01 > 0.001f)
+{
+    float speedMultiplier = GetVerticalEdgeSpeedMultiplier();
+    currentY -= maxPixelsPerSecond * motionSpeed01 * speedMultiplier * dt;
+
+    if (useVerticalEdgeBoost)
+    {
+        // 창이 위쪽으로 거의 다 사라졌을 때 바로 아래쪽으로 보냅니다.
+        // 기존처럼 완전히 화면 밖으로 다 나갈 때까지 기다리지 않습니다.
+        float topWarpY = -stageWindowHeight + warpWhenTopVisiblePixels;
+
+        if (currentY <= topWarpY)
+        {
+            currentY = displayHeightCached + bottomReappearHiddenPixels;
+
+            if (debugLog)
             {
-                currentY -= maxPixelsPerSecond * motionSpeed01 * dt;
-
-                if (currentY <= upperOffscreenY)
-                {
-                    currentY = lowerOffscreenY;
-
-                    if (debugLog)
-                        SpecialStageDebugHUD.Log("Window", "Window loop reset to lower offscreen.", this);
-                }
+                SpecialStageDebugHUD.Log(
+                    "Window",
+                    $"Fast edge wrap. currentY={currentY:0.0}, speedMul={speedMultiplier:0.00}",
+                    this
+                );
             }
+        }
+    }
+    else
+    {
+        // 기존 방식 유지
+        if (currentY <= upperOffscreenY)
+        {
+            currentY = lowerOffscreenY;
+
+            if (debugLog)
+                SpecialStageDebugHUD.Log("Window", "Window loop reset to lower offscreen.", this);
+        }
+    }
+}
 
             if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
             {
@@ -365,6 +408,54 @@ IEnumerator ShakeRoutine(float seconds)
         if (debugLog)
             SpecialStageDebugHUD.Log("Window", "RestoreWindow", this);
 #endif
+    }
+
+    float GetVerticalEdgeSpeedMultiplier()
+    {
+        if (!useVerticalEdgeBoost)
+            return 1f;
+
+        if (displayHeightCached <= 0 || stageWindowHeight <= 0)
+            return 1f;
+
+        float multiplier = 1f;
+
+        // 1. 위쪽으로 사라지는 구간
+        // currentY가 0보다 작아지면 창이 위로 잘리기 시작합니다.
+        // topBoostStartY부터 미리 점점 가속합니다.
+        float topWarpY = -stageWindowHeight + warpWhenTopVisiblePixels;
+
+        if (currentY <= topBoostStartY)
+        {
+            float u = Mathf.InverseLerp(topBoostStartY, topWarpY, currentY);
+            u = Mathf.Clamp01(u);
+
+            float k = verticalEdgeBoostCurve != null
+                ? verticalEdgeBoostCurve.Evaluate(u)
+                : u * u * (3f - 2f * u);
+
+            multiplier = Mathf.Max(multiplier, Mathf.Lerp(1f, maxEdgeSpeedMultiplier, k));
+        }
+
+        // 2. 아래쪽에서 다시 나타나는 구간
+        // top-left Y가 displayHeight - windowHeight보다 크면 창 아래쪽이 화면 밖에 있습니다.
+        float fullyVisibleBottomY = displayHeightCached - stageWindowHeight;
+
+        if (currentY > fullyVisibleBottomY)
+        {
+            float hiddenStartY = displayHeightCached + bottomReappearHiddenPixels;
+
+            float u = Mathf.InverseLerp(fullyVisibleBottomY, hiddenStartY, currentY);
+            u = Mathf.Clamp01(u);
+
+            float k = verticalEdgeBoostCurve != null
+                ? verticalEdgeBoostCurve.Evaluate(u)
+                : u * u * (3f - 2f * u);
+
+            multiplier = Mathf.Max(multiplier, Mathf.Lerp(1f, maxEdgeSpeedMultiplier, k));
+        }
+
+        return multiplier;
     }
 
     void OnDisable()

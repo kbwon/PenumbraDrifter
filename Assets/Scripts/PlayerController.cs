@@ -86,6 +86,8 @@ public class PlayerController : MonoBehaviour
     public bool InputLocked => inputLocked;
     public bool IsShadowTransitionPlaying => isShadowTransitionPlaying;
 
+    public bool IsScriptedMoveActive => scriptedMoveActive;
+
     public void SetExternalMoveSpeedMultiplier(float multiplier)
     {
         externalMoveSpeedMultiplier = Mathf.Max(0.05f, multiplier);

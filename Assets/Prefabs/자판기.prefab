@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 2028011508545309167}
   - component: {fileID: 3313981555532052178}
   - component: {fileID: 8492004494095238282}
+  - component: {fileID: 7860385366070380176}
   m_Layer: 9
   m_Name: "\uC790\uD310\uAE30"
   m_TagString: Untagged
@@ -197,3 +198,19 @@ MonoBehaviour:
   roundPreviousYawToStep: 1
   restoreStepAngle: 45
   debugLog: 0
+--- !u!208 &7860385366070380176
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3557234610794949200}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.16100001, y: 0.342, z: 0.11000001}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.31800002, z: 0}
+  m_TimeToStationary: 0.5

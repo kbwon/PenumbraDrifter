@@ -2245,6 +2245,14 @@ PrefabInstance:
       propertyPath: iconPulseSpeed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 4743174498072166313, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
+      propertyPath: bulletTimeScale
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4743174498072166313, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
+      propertyPath: bulletTimeHoldSeconds
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 7110371121047906416, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
       propertyPath: m_Name
       value: Boss
@@ -3148,6 +3156,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3800096642412145757, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
   m_PrefabInstance: {fileID: 944494479}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &964624150
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 964624152}
+  - component: {fileID: 964624151}
+  m_Layer: 0
+  m_Name: BulletTimeController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &964624151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964624150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98cffa49018e3014c978c658b87571ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BulletTimeController
+  defaultScale: 0.35
+  defaultEnterSeconds: 0.05
+  defaultHoldSeconds: 0.55
+  defaultExitSeconds: 0.12
+  adjustFixedDeltaTime: 1
+  compensatePlayerMoveSpeed: 1
+  player: {fileID: 772737015}
+  fullPlayerCompensation: 0
+  manualPlayerMoveMultiplier: 3
+  debugLog: 0
+--- !u!4 &964624152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964624150}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.82592, y: 0.5, z: -1.69472}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &971288881
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7743,3 +7805,4 @@ SceneRoots:
   - {fileID: 1377657618}
   - {fileID: 2053857690}
   - {fileID: 264068182}
+  - {fileID: 964624152}

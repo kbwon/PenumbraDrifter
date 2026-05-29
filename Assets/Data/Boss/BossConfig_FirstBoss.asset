@@ -20,7 +20,7 @@ MonoBehaviour:
   alertDecaySeconds: 1
   loseSightGrace: 0.2
   lostAlertStart01: 0.6
-  moveSpeed: 2.5
+  moveSpeed: 3
   returnSpeed: 2
   soundMoveSpeed: 2
   stopDistance: 0.8
@@ -43,12 +43,12 @@ MonoBehaviour:
   loseChaseAfterNotSeenSeconds: 0.6
   canBeAssassinated: 1
   maxHp: 3
-  punchRange: 2
+  punchRange: 3
   groundSlamRange: 6
   chargeMinRange: 7
   chargeMaxRange: 10
   punchCooldown: 1.2
-  groundSlamCooldown: 5
+  groundSlamCooldown: 7
   chargeCooldown: 10
   shadowGrabCooldown: 1.5
   punchDamagePips: 1
