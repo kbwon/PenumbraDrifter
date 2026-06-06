@@ -82,8 +82,19 @@ public class ElevatorStageDirector : MonoBehaviour
     public string nextEntryId = "Rooftop_Start";
     public Vector3 exitDirection = Vector3.forward;
 
+    [Header("Opening Dialogue")]
+    public DialogueManager dialogue;
+    public bool playOpeningDialogue = true;
+    public DialogueLine[] openingLines;
+
     public ElevatorMotionFX motionFX;
     bool playing;
+
+    [Header("Opening Skip")]
+    public bool allowOpeningSkip = true;
+    public KeyCode openingSkipKey = KeyCode.Escape;
+
+    bool openingDialoguePlaying;
 
     IEnumerator Start()
     {
@@ -92,6 +103,23 @@ public class ElevatorStageDirector : MonoBehaviour
 
         if (!playing)
             StartCoroutine(StageRoutine());
+    }
+
+    void Update()
+    {
+        if (!openingDialoguePlaying)
+            return;
+
+        if (!allowOpeningSkip)
+            return;
+
+        if (Input.GetKeyDown(openingSkipKey))
+        {
+            if (dialogue != null)
+                dialogue.RequestSkipAll();
+
+            SpecialStageDebugHUD.Log("Stage", "Opening dialogue skipped.", this);
+        }
     }
 
     void ResolveRefs()
@@ -128,6 +156,11 @@ public class ElevatorStageDirector : MonoBehaviour
 
         if (buildingSetRail == null)
             buildingSetRail = FindFirstObjectByType<ElevatorBuildingSetRailController>();
+
+        if (dialogue == null)
+            dialogue = DialogueManager.Instance != null
+                ? DialogueManager.Instance
+                : FindFirstObjectByType<DialogueManager>();
     }
 
     IEnumerator StageRoutine()
@@ -174,6 +207,9 @@ public class ElevatorStageDirector : MonoBehaviour
             SpecialStageDebugHUD.Step("Initial door close", this);
             yield return door.Close();
         }
+
+
+        yield return PlayOpeningDialogue();
 
         if (player != null)
         {
@@ -572,6 +608,29 @@ public class ElevatorStageDirector : MonoBehaviour
             return;
 
         buildingSetRail.SetVerticalSpeed(exteriorScroller.speed);
+    }
+
+    IEnumerator PlayOpeningDialogue()
+    {
+        if (!playOpeningDialogue)
+            yield break;
+
+        if (dialogue == null)
+            yield break;
+
+        if (openingLines == null || openingLines.Length == 0)
+            yield break;
+
+        openingDialoguePlaying = true;
+
+        yield return dialogue.Show(
+            openingLines,
+            lockPlayer: false,
+            forceExitShadow: false,
+            pauseGame: false
+        );
+
+        openingDialoguePlaying = false;
     }
 
     IEnumerator ShakeGameAndWindow(float seconds)

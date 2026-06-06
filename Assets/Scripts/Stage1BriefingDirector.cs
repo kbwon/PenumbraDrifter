@@ -51,6 +51,13 @@ public class Stage1BriefingDirector : MonoBehaviour
     public bool waitForEntryWalkBeforeBriefing = true;
     public float maxEntryWalkWaitSeconds = 5f;
 
+    [Header("Skip")]
+    public bool allowSkip = true;
+    public KeyCode skipKey = KeyCode.Escape;
+    public bool debugSkipLog = true;
+
+    bool skipRequested;
+
     [Header("Debug")]
     public bool debugLog = true;
 
@@ -66,6 +73,9 @@ public class Stage1BriefingDirector : MonoBehaviour
 
         ResolveRefs();
 
+        if (waitForEntryWalkBeforeBriefing)
+            yield return WaitForEntryWalkFinished();
+
         if (!playing)
             StartCoroutine(BriefingRoutine());
     }
@@ -74,6 +84,9 @@ public class Stage1BriefingDirector : MonoBehaviour
     {
         if (!briefingInputLockActive)
             return;
+
+        if (allowSkip && Input.GetKeyDown(skipKey))
+            RequestSkipBriefing();
 
         MaintainBriefingInputLock();
     }
@@ -246,6 +259,8 @@ public class Stage1BriefingDirector : MonoBehaviour
 
         while (t < duration)
         {
+            if (ShouldSkip())
+                yield break;
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
             float k = u * u * (3f - 2f * u);
@@ -320,6 +335,8 @@ public class Stage1BriefingDirector : MonoBehaviour
 
         while (t < duration)
         {
+            if (ShouldSkip())
+                yield break;
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
             float k = u * u * (3f - 2f * u);
@@ -451,5 +468,58 @@ public class Stage1BriefingDirector : MonoBehaviour
             shadow.ClearSurfaceAnchor();
             shadow.ClearMovingShadowHost();
         }
+    }
+
+    public void RequestSkipBriefing()
+    {
+        if (!playing)
+            return;
+
+        skipRequested = true;
+
+        if (dialogue != null)
+            dialogue.RequestSkipAll();
+
+        if (debugSkipLog)
+            Debug.Log("[Stage1Briefing] Skip requested.", this);
+    }
+
+    bool ShouldSkip()
+    {
+        return allowSkip && skipRequested;
+    }
+
+    void RestoreGameplayCamera()
+    {
+        if (followCamera == null)
+            return;
+
+        followCamera.SetCinematicInstantPosition(true);
+        followCamera.ClearFocusOverride();
+        followCamera.SetGameplayYaw(finalGameplayYaw);
+        followCamera.SetYawImmediate(finalGameplayYaw);
+        followCamera.SetOrthoSizeImmediate(gameplayOrthoSize);
+        followCamera.SetCinematicMode(false);
+        followCamera.SnapNow();
+    }
+
+    void FinishBriefingImmediate()
+    {
+        if (dialogue != null)
+            dialogue.RequestSkipAll();
+
+        RestoreGameplayCamera();
+
+        briefingInputLockActive = false;
+        SetBriefingControlLocked(false);
+
+        if (shadow != null)
+            shadow.SetShadowToggleLocked(false);
+
+        skipRequested = false;
+        playing = false;
+
+        if (debugSkipLog)
+            Debug.Log("[Stage1Briefing] Briefing finished or skipped.", this);
     }
 }

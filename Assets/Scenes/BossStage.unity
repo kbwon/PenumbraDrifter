@@ -2194,6 +2194,10 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2726686373542860702, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
+      propertyPath: startActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2726686373542860702, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
       propertyPath: chargeTelegraph
       value: 
       objectReference: {fileID: 2053857691}
@@ -2603,6 +2607,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eabf5eec9be754942958abf548d81097, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShadowTeleport
+--- !u!4 &785894826 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 746942186757738368, guid: b918fb4768a1c6e48887f606e102fa01, type: 3}
+  m_PrefabInstance: {fileID: 743302808}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &786199894
 GameObject:
   m_ObjectHideFlags: 0
@@ -6373,6 +6382,87 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3800096642412145757, guid: 0e3b1388d8a76489c88ca1e20f243842, type: 3}
   m_PrefabInstance: {fileID: 1772088966}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1778340830
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1778340832}
+  - component: {fileID: 1778340831}
+  m_Layer: 0
+  m_Name: BossStageIntroDirector
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1778340831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778340830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8265f44d3abbd8f48865afebd4d86a3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossStageIntroDirector
+  dialogue: {fileID: 0}
+  player: {fileID: 0}
+  shadow: {fileID: 0}
+  followCamera: {fileID: 0}
+  boss: {fileID: 743302809}
+  bossFocusPoint: {fileID: 785894826}
+  bossFocusYaw: 45
+  bossFocusOrthoSize: 7
+  focusMoveSeconds: 1
+  returnMoveSeconds: 1
+  playOnStart: 1
+  introLines:
+  - speakerName: Client
+    text: This is the final security chamber. The man ahead is our target.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: He does not look like a normal guard.
+    portrait: {fileID: 0}
+  - speakerName: Boss
+    text: Guard? No. I am the reason this tower still stands.
+    portrait: {fileID: 0}
+  - speakerName: Boss
+    text: You used shadows to sneak past my men. Impressive, but meaningless.
+    portrait: {fileID: 0}
+  - speakerName: Client
+    text: His attacks will leave brief openings. That is when you strike from the
+      shadows.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: So I wait for the opening, enter the shadow, and take him down.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: Try it. Step into my shadow, and I will drag you out myself.
+    portrait: {fileID: 0}
+  waitForEntryWalkBeforeIntro: 1
+  maxEntryWalkWaitSeconds: 5
+  startDelay: 0.1
+--- !u!4 &1778340832
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778340830}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.24349, y: 0.5, z: 9.17191}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1788809480
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7806,3 +7896,4 @@ SceneRoots:
   - {fileID: 2053857690}
   - {fileID: 264068182}
   - {fileID: 964624152}
+  - {fileID: 1778340832}

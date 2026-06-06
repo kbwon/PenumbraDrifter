@@ -4153,9 +4153,12 @@ MonoBehaviour:
   horizontalTransitionSeconds: 3
   horizontalWindowStep01: 0.5
   horizontalWindowStep02: 0.5
-  horizontalShakeSeconds: 0.45
   horizontalPrePauseSeconds: 0.15
   horizontalPostPauseSeconds: 0.25
+  horizontalCameraShakeSeconds: 2.5
+  horizontalWindowShakeSeconds: 0.35
+  horizontalEffectStartDelaySeconds: 0.1
+  stopWindowShakeAtHorizontalEnd: 1
   arrivePauseSeconds: 0.5
   exitWalkSeconds: 0.8
   exitWalkSpeed: 2.5
@@ -4168,9 +4171,32 @@ MonoBehaviour:
   lockPlayerBillboardDuringSpecialCamera: 1
   playerVisualFaceCameraY: {fileID: 0}
   lockPlayerVisualFaceCameraYDuringSpecialCamera: 1
+  windowRestoreWaitSeconds: 0.8
   nextSceneName: BossStage
   nextEntryId: Rooftop_Start
   exitDirection: {x: 0, y: 0, z: -1}
+  dialogue: {fileID: 1987641409}
+  playOpeningDialogue: 1
+  openingLines:
+  - speakerName: Client
+    text: The target is at the top of this building.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: So the plan is to ride straight into their security zone?
+    portrait: {fileID: 0}
+  - speakerName: Client
+    text: The elevator will stop at several secured floors. Enemies may enter when
+      the doors open.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: A locked box full of guards. Great.
+    portrait: {fileID: 0}
+  - speakerName: Client
+    text: Survive the ride. That is all you need to do.
+    portrait: {fileID: 0}
+  - speakerName: Drifter
+    text: Fine. Let us go up.
+    portrait: {fileID: 0}
   motionFX: {fileID: 0}
 --- !u!1 &939082119
 GameObject:
@@ -7332,6 +7358,35 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  useVerticalEdgeBoost: 1
+  topBoostStartY: 120
+  warpWhenTopVisiblePixels: 35
+  bottomReappearHiddenPixels: 20
+  maxEdgeSpeedMultiplier: 4
+  verticalEdgeBoostCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   debugLog: 1
 --- !u!1001 &1602359306
 PrefabInstance:
@@ -8797,6 +8852,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+--- !u!114 &1987641409 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7355505692419295089, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+  m_PrefabInstance: {fileID: 1987641408}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73ac8f953b481db46ba36273e5668ea5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
 --- !u!1001 &2011167980
 PrefabInstance:
   m_ObjectHideFlags: 0

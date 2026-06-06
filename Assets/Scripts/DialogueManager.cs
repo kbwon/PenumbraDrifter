@@ -75,10 +75,10 @@ public class DialogueManager : MonoBehaviour
     }
 
     public IEnumerator Show(
-        DialogueLine[] lines,
-        bool lockPlayer = true,
-        bool forceExitShadow = true,
-        bool pauseGame = false)
+     DialogueLine[] lines,
+     bool lockPlayer = true,
+     bool forceExitShadow = true,
+     bool pauseGame = false)
     {
         if (lines == null || lines.Length == 0)
             yield break;
@@ -87,6 +87,8 @@ public class DialogueManager : MonoBehaviour
             yield return null;
 
         IsPlaying = true;
+        SkipAllRequested = false;
+
         ResolveRefs();
 
         bool pausedByThisDialogue = false;
@@ -111,10 +113,17 @@ public class DialogueManager : MonoBehaviour
 
         for (int i = 0; i < lines.Length; i++)
         {
+            if (SkipAllRequested)
+                break;
+
             DialogueLine line = lines[i];
-            if (line == null) continue;
+            if (line == null)
+                continue;
 
             yield return ShowLineRoutine(line);
+
+            if (SkipAllRequested)
+                break;
         }
 
         HideImmediate();
@@ -125,6 +134,7 @@ public class DialogueManager : MonoBehaviour
         if (lockPlayer && cachedPlayer != null)
             cachedPlayer.SetInputLocked(false);
 
+        SkipAllRequested = false;
         IsPlaying = false;
     }
 
@@ -167,6 +177,9 @@ public class DialogueManager : MonoBehaviour
 
             while (index < fullText.Length)
             {
+                if (SkipAllRequested)
+                    yield break;
+
                 if (WasContinuePressed())
                 {
                     dialogueText.text = fullText;
@@ -198,7 +211,12 @@ public class DialogueManager : MonoBehaviour
         yield return null;
 
         while (!WasContinuePressed())
+        {
+            if (SkipAllRequested)
+                yield break;
+
             yield return null;
+        }
 
         yield return null;
     }
@@ -254,5 +272,17 @@ public class DialogueManager : MonoBehaviour
 
         if (rootObject != null)
             rootObject.SetActive(false);
+    }
+
+    public bool SkipAllRequested { get; private set; }
+
+    public void RequestSkipAll()
+    {
+        SkipAllRequested = true;
+    }
+
+    public void ClearSkipRequest()
+    {
+        SkipAllRequested = false;
     }
 }
