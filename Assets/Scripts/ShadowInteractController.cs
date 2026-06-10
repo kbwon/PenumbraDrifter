@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class ShadowInteractController : MonoBehaviour
 {
@@ -49,6 +50,11 @@ public class ShadowInteractController : MonoBehaviour
     [Header("Input Guard")]
     public PlayerController playerController;
     public float shadowToggleCooldown = 0.25f;
+
+    [Header("Title Mode")]
+    public bool startInShadowModeOnAwake;
+    public bool infiniteShadowGauge;
+    public bool ignoreShadowInputOverUI = true;
 
     bool shadowToggleLocked;
     float nextShadowToggleAllowedTime;
@@ -127,6 +133,12 @@ public class ShadowInteractController : MonoBehaviour
 
         ApplyColliderMode(false);
         ClearMovingShadowHost();
+
+        if (startInShadowModeOnAwake)
+        {
+            SetInitialShadowModeSilently(true, true);
+        }
+
         NotifyGaugeChanged(true);
     }
 
@@ -281,6 +293,13 @@ public class ShadowInteractController : MonoBehaviour
 
     void UpdateGauge(bool onShadow)
     {
+        if (infiniteShadowGauge)
+        {
+            gauge01 = 1f;
+            NotifyGaugeChanged(false);
+            return;
+        }
+
         if (inShadowMode)
         {
             gauge01 -= Time.deltaTime / Mathf.Max(0.01f, drainFullSeconds);
@@ -756,6 +775,17 @@ public class ShadowInteractController : MonoBehaviour
             );
     }
 
+    public void ForceEnterShadowMode(bool refillGauge = true)
+    {
+        if (refillGauge)
+            gauge01 = 1f;
+
+        if (!inShadowMode)
+            EnterShadowMode();
+
+        NotifyGaugeChanged(true);
+    }
+
     void BlockShadowToggleFor(float seconds)
     {
         if (seconds <= 0f) return;
@@ -780,6 +810,45 @@ public class ShadowInteractController : MonoBehaviour
         if (playerController != null && playerController.IsShadowTransitionPlaying)
             return false;
 
+        if (ignoreShadowInputOverUI &&
+    EventSystem.current != null &&
+    EventSystem.current.IsPointerOverGameObject())
+        {
+            return false;
+        }
+
         return true;
+    }
+
+    public void SetInitialShadowModeSilently(bool shadowMode, bool refillGauge = true)
+    {
+        if (refillGauge)
+            gauge01 = 1f;
+
+        inShadowMode = shadowMode;
+
+        ApplyColliderMode(shadowMode);
+        ClearSurfaceAnchor();
+        ClearMovingShadowHost();
+
+        if (visualRoot != null)
+        {
+            if (shadowMode)
+            {
+                Vector3 pos = visualOriginalLocalPos;
+                pos.y += sinkVisualY;
+                visualRoot.localPosition = pos;
+            }
+            else
+            {
+                visualRoot.localPosition = visualOriginalLocalPos;
+            }
+        }
+
+        SetIndicator(false);
+        NotifyGaugeChanged(true);
+
+        if (playerController != null)
+            playerController.SyncShadowStateWithoutTransition();
     }
 }
