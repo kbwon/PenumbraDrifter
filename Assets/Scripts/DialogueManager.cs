@@ -23,6 +23,10 @@ public class DialogueManager : MonoBehaviour
     public bool useTypewriter = true;
     public float charsPerSecond = 45f;
 
+    [Header("Typing Audio")]
+    public bool playTypingSound = true;
+    public int charsPerTypingSound = 2;
+
     [Header("Input")]
     public KeyCode continueKey = KeyCode.Space;
     public KeyCode alternateContinueKey = KeyCode.Return;
@@ -194,6 +198,18 @@ public class DialogueManager : MonoBehaviour
                     timer -= interval;
                     index++;
                     dialogueText.text = fullText.Substring(0, index);
+
+                    if (playTypingSound && UIAudioManager.Instance != null)
+                    {
+                        char typedChar = fullText[index - 1];
+
+                        if (!char.IsWhiteSpace(typedChar) &&
+                            charsPerTypingSound > 0 &&
+                            index % charsPerTypingSound == 0)
+                        {
+                            UIAudioManager.Instance.PlayDialogueTyping();
+                        }
+                    }
                 }
 
                 yield return null;

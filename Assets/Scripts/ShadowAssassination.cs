@@ -27,7 +27,7 @@ public class ShadowAssassination : MonoBehaviour
 
     EnemyController pendingTarget;
     AssassinationFeedback feedback;
-
+    PlayerShadowAudio shadowAudio;
     void Awake()
     {
         if (!shadowCtrl)
@@ -41,6 +41,9 @@ public class ShadowAssassination : MonoBehaviour
 
         if (!feedback)
             feedback = GetComponent<AssassinationFeedback>();
+
+        if (!shadowAudio)
+            shadowAudio = GetComponent<PlayerShadowAudio>();
     }
 
     void Update()
@@ -70,6 +73,9 @@ public class ShadowAssassination : MonoBehaviour
         isAssassinating = true;
         hitDone = false;
         endDone = false;
+
+        if (shadowAudio != null)
+            shadowAudio.PlayAssassinationBulletTime();
 
         if (playerController != null)
         {
@@ -108,6 +114,10 @@ public class ShadowAssassination : MonoBehaviour
             return;
         }
 
+        if (shadowAudio != null)
+            shadowAudio.PlayShadowAssassination();
+
+
         pendingTarget.KillByAssassination();
         pendingTarget = null;
     }
@@ -124,6 +134,9 @@ public class ShadowAssassination : MonoBehaviour
         endDone = true;
 
         pendingTarget = null;
+
+        if (shadowAudio != null)
+            shadowAudio.SuppressNextShadowExitSound();
 
         ForceExitShadowForAssassination();
 

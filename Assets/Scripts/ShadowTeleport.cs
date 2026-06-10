@@ -18,6 +18,9 @@ public class ShadowTeleport : MonoBehaviour
     public float floorOffset = 0.02f;
     public float wallOffset = 0.02f;
 
+    [Header("Audio")]
+    public PlayerShadowAudio shadowAudio;
+
     float cooldownLeft;
     Rigidbody rb;
 
@@ -30,6 +33,8 @@ public class ShadowTeleport : MonoBehaviour
 
         if (!shadowCtrl)
             shadowCtrl = GetComponent<ShadowInteractController>();
+        if (!shadowAudio)
+            shadowAudio = GetComponent<PlayerShadowAudio>();
 
         if (GameManager.Instance != null)
             GameManager.Instance.RegisterTeleport(this);
@@ -61,6 +66,10 @@ public class ShadowTeleport : MonoBehaviour
         if (!TryGetTeleportTarget(out RaycastHit hit)) return;
 
         TeleportToSurface(hit);
+
+        if (shadowAudio != null)
+            shadowAudio.PlayShadowBlink();
+
         cooldownLeft = cooldownSeconds;
     }
 

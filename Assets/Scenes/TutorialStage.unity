@@ -6192,7 +6192,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Ttitle
+  m_text: Title
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9146,6 +9146,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2160202953803737206, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
+      propertyPath: hurtVolume
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2160202953803737206, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
+      propertyPath: crouchVolume
+      value: 0.3
+      objectReference: {fileID: 0}
     - target: {fileID: 2877779080383602264, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: cameraBump
       value: 
@@ -9194,6 +9202,10 @@ PrefabInstance:
       propertyPath: shadowIndicator
       value: 
       objectReference: {fileID: 1548402163}
+    - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
+      propertyPath: ignoreShadowInputOverUI
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: gameplayLights.Array.size
       value: 7
@@ -15593,7 +15605,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 746942186757738368, guid: 12ede08204e777940a7f622fb63e31ba, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -22.69198
+      value: -23.69198
       objectReference: {fileID: 0}
     - target: {fileID: 746942186757738368, guid: 12ede08204e777940a7f622fb63e31ba, type: 3}
       propertyPath: m_LocalRotation.w
@@ -20828,6 +20840,10 @@ PrefabInstance:
       propertyPath: shadowCtrl
       value: 
       objectReference: {fileID: 1025952896}
+    - target: {fileID: 5727499790037882223, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+      propertyPath: useTeleportMarker
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6206503634642029413, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
       propertyPath: m_SizeDelta.x
       value: 420

@@ -62,6 +62,9 @@ public class EnemyController : MonoBehaviour
     public string walkBoolName = "isWalk";
     public string attackTriggerName = "attack";
 
+    [Header("Audio")]
+    public EnemyAudio enemyAudio;
+
     protected enum State
     {
         Idle,
@@ -117,6 +120,9 @@ public class EnemyController : MonoBehaviour
         if (!vision) vision = GetComponent<EnemyVision>();
         if (!alertUI) alertUI = GetComponentInChildren<EnemyAlertUI>(true);
         if (!anim) anim = GetComponentInChildren<Animator>();
+
+        if (!enemyAudio)
+            enemyAudio = GetComponent<EnemyAudio>();
 
         if (!flipRoot)
             flipRoot = visualBillboard != null ? visualBillboard : transform;
@@ -558,11 +564,16 @@ public class EnemyController : MonoBehaviour
 
     protected virtual void EnterChaseState()
     {
+        bool wasAlreadyChasing = state == State.Chase;
+
         state = State.Chase;
         visualAlert01 = 1f;
         soundAlert01 = 0f;
         notSeenTimer = 0f;
         visualLostGraceTimer = 0f;
+
+        if (!wasAlreadyChasing && enemyAudio != null)
+            enemyAudio.PlaySpotted();
     }
 
     protected virtual void EnterSoundAlertState(Vector3 heardPosition)
@@ -1273,6 +1284,10 @@ public class EnemyController : MonoBehaviour
     public void Anim_AttackHit()
     {
         if (!isAttacking) return;
+
+        if (enemyAudio != null)
+            enemyAudio.PlayMeleeAttack();
+
         ApplyAttackDamage();
     }
 

@@ -3789,7 +3789,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Ttitle
+  m_text: Title
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5466,6 +5466,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1117440308}
     - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
+      propertyPath: ignoreShadowInputOverUI
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: 'gameplayLights.Array.data[0]'
       value: 
       objectReference: {fileID: 1117440307}
@@ -6135,6 +6139,86 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 903041882}
   m_CullTransparentMesh: 1
+--- !u!1 &906207340
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 906207343}
+  - component: {fileID: 906207342}
+  - component: {fileID: 906207341}
+  m_Layer: 0
+  m_Name: PauseMenuSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &906207341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906207340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810cba695f2fb60468df0cd8670b0618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenuController
+  pausePanel: {fileID: 1205372599}
+  settingsPanel: {fileID: 1812523522}
+  resumeButton: {fileID: 1582181201}
+  settingsButton: {fileID: 274652754}
+  restartButton: {fileID: 638772874}
+  returnToTitleButton: {fileID: 903041884}
+  quitButton: {fileID: 376929492}
+  volumeSlider: {fileID: 209686693}
+  closeSettingsButton: {fileID: 911634220}
+  stageShortcuts:
+  - button: {fileID: 588703478}
+    sceneName: TutorialStage
+  - button: {fileID: 1986934313}
+    sceneName: Stage1
+  - button: {fileID: 40844189}
+    sceneName: SpecialStage
+  - button: {fileID: 188898889}
+    sceneName: BossStage
+  sceneLoader: {fileID: 906207342}
+  pauseKey: 27
+  titleSceneName: TitleScene
+--- !u!114 &906207342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906207340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f3e5a3558ce6b46a6934ef9823aa30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DemoSceneLoader
+  titleSceneName: TitleScene
+  tutorialSceneName: TutorialStage
+--- !u!4 &906207343
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906207340}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 908.64294, y: 0, z: 2335.18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &911634218
 GameObject:
   m_ObjectHideFlags: 0
@@ -6278,6 +6362,7 @@ GameObject:
   m_Component:
   - component: {fileID: 922394787}
   - component: {fileID: 922394788}
+  - component: {fileID: 922394789}
   m_Layer: 0
   m_Name: ElevatorStageDirector
   m_TagString: Untagged
@@ -6318,6 +6403,7 @@ MonoBehaviour:
   waveSpawner: {fileID: 127773183}
   exteriorScroller: {fileID: 1473643540}
   windowMotion: {fileID: 1594935844}
+  elevatorAudio: {fileID: 0}
   wave01:
     waveName: 
     enemies:
@@ -6431,6 +6517,30 @@ MonoBehaviour:
   motionFX: {fileID: 0}
   allowOpeningSkip: 1
   openingSkipKey: 27
+--- !u!114 &922394789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922394786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37731bf2188133c4eaaad5a267a9c063, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ElevatorAudio
+  loopSource: {fileID: 0}
+  oneShotSource: {fileID: 0}
+  horizontalSource: {fileID: 0}
+  elevatorLoopClip: {fileID: 8300000, guid: 95921da90bcf1f042a760eb976fc3f8b, type: 3}
+  elevatorLoopVolume: 0.35
+  loopFadeSpeed: 1.5
+  minLoopPitch: 0.9
+  maxLoopPitch: 1.1
+  elevatorDoorClip: {fileID: 8300000, guid: c4769265f6d21544485ff57d4600cf34, type: 3}
+  elevatorDoorVolume: 0.65
+  horizontalMoveClip: {fileID: 8300000, guid: a9fcb34b27bb4814d9e820801548efde, type: 3}
+  horizontalMoveVolume: 0.7
 --- !u!1 &939082119
 GameObject:
   m_ObjectHideFlags: 0
@@ -13331,3 +13441,4 @@ SceneRoots:
   - {fileID: 2042627682}
   - {fileID: 1368722343}
   - {fileID: 1137210073}
+  - {fileID: 906207343}

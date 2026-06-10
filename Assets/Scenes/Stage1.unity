@@ -10393,6 +10393,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1117440308}
     - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
+      propertyPath: ignoreShadowInputOverUI
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443147067082003208, guid: 421846b47a26e9e47b321e3c1a6b84e7, type: 3}
       propertyPath: gameplayLights.Array.size
       value: 21
       objectReference: {fileID: 0}
@@ -20274,7 +20278,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8020619400291677571, guid: 0e295213b82acdd4cae0e791c615458a, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21394,7 +21398,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Ttitle
+  m_text: Title
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -24526,6 +24530,86 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1092828196817334086, guid: d2a7ea89cd36a8348aa690482b82df69, type: 3}
   m_PrefabInstance: {fileID: 1877108683}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1883827587
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1883827590}
+  - component: {fileID: 1883827589}
+  - component: {fileID: 1883827588}
+  m_Layer: 0
+  m_Name: PauseMenuSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1883827588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883827587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810cba695f2fb60468df0cd8670b0618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenuController
+  pausePanel: {fileID: 1582608100}
+  settingsPanel: {fileID: 1549564547}
+  resumeButton: {fileID: 1672350722}
+  settingsButton: {fileID: 620222293}
+  restartButton: {fileID: 620106499}
+  returnToTitleButton: {fileID: 1578143969}
+  quitButton: {fileID: 451849352}
+  volumeSlider: {fileID: 749358202}
+  closeSettingsButton: {fileID: 956374692}
+  stageShortcuts:
+  - button: {fileID: 113286349}
+    sceneName: TutorialStage
+  - button: {fileID: 418572390}
+    sceneName: Stage1
+  - button: {fileID: 219653703}
+    sceneName: SpecialStage
+  - button: {fileID: 76875942}
+    sceneName: BossStage
+  sceneLoader: {fileID: 1883827589}
+  pauseKey: 27
+  titleSceneName: TitleScene
+--- !u!114 &1883827589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883827587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f3e5a3558ce6b46a6934ef9823aa30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DemoSceneLoader
+  titleSceneName: TitleScene
+  tutorialSceneName: TutorialStage
+--- !u!4 &1883827590
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883827587}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 908.64294, y: 0, z: 2335.18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1884570644
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28909,3 +28993,4 @@ SceneRoots:
   - {fileID: 1131232652}
   - {fileID: 258484494}
   - {fileID: 61846943}
+  - {fileID: 1883827590}

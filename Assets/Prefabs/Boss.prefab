@@ -345,6 +345,7 @@ GameObject:
   - component: {fileID: 5107748750934640638}
   - component: {fileID: 3985078295453685821}
   - component: {fileID: 4743174498072166313}
+  - component: {fileID: 3605902002306045649}
   m_Layer: 8
   m_Name: Boss
   m_TagString: Enemy
@@ -416,6 +417,7 @@ MonoBehaviour:
   billboardSmoothSpeed: 0
   walkBoolName: isWalk
   attackTriggerName: attack
+  enemyAudio: {fileID: 0}
   startActive: 1
   bossConfig: {fileID: 11400000, guid: 5286b9e9c6d179c43ba3da79b854e209, type: 2}
   shockwavePrefab: {fileID: 0}
@@ -457,6 +459,7 @@ MonoBehaviour:
   shadowGrabRequestGraceSeconds: 0.35
   groundSlamTelegraph: {fileID: 0}
   groundSlamTelegraphSeconds: 0.9
+  bossAudio: {fileID: 0}
   chargeTelegraph: {fileID: 0}
   chargeTelegraphSeconds: 0.9
   chargeTelegraphWidth: 2.2
@@ -559,7 +562,51 @@ MonoBehaviour:
   zoomInSeconds: 0.08
   zoomHoldSeconds: 0.08
   zoomOutSeconds: 0.16
+  useBulletTime: 1
+  bulletTimeScale: 0.35
+  bulletTimeEnterSeconds: 0.04
+  bulletTimeHoldSeconds: 0.55
+  bulletTimeExitSeconds: 0.12
+  stopBulletTimeOnVulnerableEnd: 1
   debugLog: 0
+--- !u!114 &3605902002306045649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7110371121047906416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e3710ff11443e047b9e6a2b234831b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAudio
+  oneShotSource: {fileID: 0}
+  chargeSource: {fileID: 0}
+  footstepLoopSource: {fileID: 0}
+  entranceClip: {fileID: 8300000, guid: 3b56597ca4c2abb4085028737d6acd66, type: 3}
+  punchClip: {fileID: 8300000, guid: 97a738d7fef685c4d89ec1527d4770df, type: 3}
+  chargeClip: {fileID: 8300000, guid: 0d080178385ab844dbad762546873571, type: 3}
+  groundSlamClip: {fileID: 8300000, guid: 7869d566c9a4bdb4c9cfa38e2494084e, type: 3}
+  shadowGrabClip: {fileID: 8300000, guid: aa67519fadf8d5346943e33b64f4b42b, type: 3}
+  hurtDeathClip: {fileID: 8300000, guid: 2dead5864f906904e933f6ee3f741701, type: 3}
+  entranceVolume: 0.75
+  punchVolume: 0.75
+  chargeVolume: 0.7
+  groundSlamVolume: 0.85
+  shadowGrabVolume: 0.75
+  hurtDeathVolume: 0.8
+  loopChargeClip: 0
+  randomizePitch: 1
+  minPitch: 0.96
+  maxPitch: 1.04
+  use3DSound: 0
+  minDistance: 3
+  maxDistance: 18
+  footstepLoopClip: {fileID: 8300000, guid: c2c8f1462e3a5994bb21fb82d21d46a2, type: 3}
+  footstepLoopVolume: 0.45
+  footstepFadeSpeed: 5
+  footstepPitch: 0.9
 --- !u!1 &7116352002753573266
 GameObject:
   m_ObjectHideFlags: 0

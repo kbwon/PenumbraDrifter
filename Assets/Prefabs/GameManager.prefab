@@ -86,6 +86,7 @@ GameObject:
   - component: {fileID: 7854439977493575153}
   - component: {fileID: 423995749921256540}
   - component: {fileID: 3864555320556789230}
+  - component: {fileID: 8538200368916879535}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -145,6 +146,33 @@ MonoBehaviour:
   exitWalkSeconds: 1
   enterWalkSpeed: 4.5
   exitWalkSpeed: 4.5
+--- !u!114 &8538200368916879535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797981477529265741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb5474e097a91924aac7831132f60277, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIAudioManager
+  source: {fileID: 0}
+  buttonClickClip: {fileID: 8300000, guid: a8b780bfd85350249babe5343e64590f, type: 3}
+  dialogueTypingClip: {fileID: 0}
+  gameOverClip: {fileID: 8300000, guid: 659157cbc3a686145824ec4ca29bdfde, type: 3}
+  stageClearClip: {fileID: 8300000, guid: 85e7d07f2b72c8d47be1fc993e6682a8, type: 3}
+  buttonClickVolume: 0.5
+  dialogueTypingVolume: 0.25
+  gameOverVolume: 0.75
+  stageClearVolume: 0.75
+  typingMinInterval: 0.035
+  randomizeTypingPitch: 1
+  typingMinPitch: 0.96
+  typingMaxPitch: 1.04
+  autoRegisterSceneButtons: 1
+  includeInactiveButtons: 1
 --- !u!1 &3456524071325793763
 GameObject:
   m_ObjectHideFlags: 0

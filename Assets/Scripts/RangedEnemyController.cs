@@ -213,6 +213,9 @@ public class RangedEnemyController : EnemyController
             playerTag,
             bodyCollider
         );
+
+        if (enemyAudio != null)
+            enemyAudio.PlayRangedAttack();
     }
 
     bool IsFacingDirectionEnough(Vector3 dir)

@@ -1027,6 +1027,66 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &523219449
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 523219450}
+  - component: {fileID: 523219451}
+  m_Layer: 0
+  m_Name: BGMManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &523219450
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523219449}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 52.51175, y: 0, z: 14.30716}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &523219451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523219449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d9ee08a9a390dd49919bc66e7596db0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BGMManager
+  musicSource: {fileID: 0}
+  sceneBGMs:
+  - sceneName: TitleScene
+    clip: {fileID: 8300000, guid: 64798a3bf6e43854bb6edb8f2da807be, type: 3}
+  - sceneName: TutorialStage
+    clip: {fileID: 8300000, guid: f53cd6b4fdbf6854da83707a20fee52a, type: 3}
+  - sceneName: Stage1
+    clip: {fileID: 8300000, guid: fcfb7cf5e4c44d44e876bfec7e46db16, type: 3}
+  - sceneName: SpecialStage
+    clip: {fileID: 8300000, guid: 0a317f70f456de2458cbcb9196b4ebb1, type: 3}
+  - sceneName: BossStage
+    clip: {fileID: 8300000, guid: b563c59d25d9f974cbf999a4eed22030, type: 3}
+  bgmVolume: 0.35
+  useFade: 1
+  fadeOutSeconds: 0.5
+  fadeInSeconds: 0.7
 --- !u!114 &536451668 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4681855636322639346, guid: c537f51dc2d36284e9b764bc96cb0665, type: 3}
@@ -5121,6 +5181,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8538200368916879535, guid: b910b9fd35a7a2946bba23d5f0431c4a, type: 3}
+      propertyPath: dialogueTypingClip
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5532,3 +5596,4 @@ SceneRoots:
   - {fileID: 1025952895}
   - {fileID: 613388418}
   - {fileID: 133509574}
+  - {fileID: 523219450}

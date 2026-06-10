@@ -36,6 +36,9 @@ public class BossStageIntroDirector : MonoBehaviour
     public KeyCode skipKey = KeyCode.Escape;
     public bool skipOnlyAfterEntryWalk = true;
 
+    [Header("Audio")]
+    public BossAudio bossAudio;
+
     bool skipRequested;
 
     void Awake()
@@ -113,6 +116,12 @@ public class BossStageIntroDirector : MonoBehaviour
 
         if (boss == null)
             boss = FindFirstObjectByType<BossController>();
+
+        if (bossAudio == null && boss != null)
+            bossAudio = boss.GetComponent<BossAudio>();
+
+        if (bossAudio == null)
+            bossAudio = FindFirstObjectByType<BossAudio>();
     }
 
     IEnumerator IntroRoutine()
@@ -142,6 +151,9 @@ public class BossStageIntroDirector : MonoBehaviour
                 bossFocusOrthoSize,
                 focusMoveSeconds
             );
+
+            if (bossAudio != null)
+                bossAudio.PlayEntrance();
         }
 
         MaintainIntroLock();

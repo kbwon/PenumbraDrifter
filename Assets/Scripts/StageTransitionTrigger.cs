@@ -30,6 +30,9 @@ public class StageTransitionTrigger : MonoBehaviour
 
         Vector3 exitDir = GetExitDirection(player.transform);
 
+        if (UIAudioManager.Instance != null)
+            UIAudioManager.Instance.PlayStageClear();
+
         if (SceneTransitionDirector.Instance != null)
         {
             SceneTransitionDirector.Instance.StartStageTransition(

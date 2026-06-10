@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 7227622326188465193}
   - component: {fileID: 603172808138249372}
   - component: {fileID: 4599314436094020502}
+  - component: {fileID: 6213617820278239170}
   m_Layer: 8
   m_Name: Enemy_B
   m_TagString: Enemy
@@ -455,10 +456,12 @@ MonoBehaviour:
   billboardSmoothSpeed: 0
   walkBoolName: isWalk
   attackTriggerName: attack
+  enemyAudio: {fileID: 0}
   muzzle: {fileID: 0}
   projectilePrefab: {fileID: 3281670056790330426, guid: 77ea274a906be4b43bf5e690cd5ac8d7, type: 3}
-  aimProjectileAtPlayerHeight: 1
-  projectileTargetYOffset: 4
+  aimAtPlayerColliderCenter: 1
+  projectileAimExtraYOffset: 0
+  fallbackAimYOffset: 0.8
   useProceduralMuzzle: 1
   muzzleHeight: 1.2
   muzzleForwardOffset: 0.75
@@ -513,6 +516,41 @@ NavMeshAgent:
   m_BaseOffset: 2
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &6213617820278239170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3215750657035701662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aad9bf01387388f4a8c28577c507a205, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAudio
+  enemy: {fileID: 7227622326188465193}
+  rb: {fileID: 3476448660524827463}
+  agent: {fileID: 4599314436094020502}
+  footstepSource: {fileID: 0}
+  oneShotSource: {fileID: 0}
+  footstepClip: {fileID: 8300000, guid: befe4bd487fc58e43969b8e179885ba1, type: 3}
+  footstepVolume: 0.25
+  footstepPitch: 0.9
+  footstepFadeSpeed: 8
+  moveThreshold: 0.05
+  spottedClip: {fileID: 8300000, guid: d490026542c603f49a3771c98d473772, type: 3}
+  spottedVolume: 0.7
+  spottedMinInterval: 0.25
+  meleeAttackClip: {fileID: 0}
+  rangedAttackClip: {fileID: 8300000, guid: 5fdedaf58853af040b5dd1982e40c007, type: 3}
+  meleeAttackVolume: 0.55
+  rangedAttackVolume: 0.55
+  randomizeOneShotPitch: 1
+  minPitch: 0.96
+  maxPitch: 1.04
+  use3DSound: 0
+  minDistance: 2
+  maxDistance: 14
 --- !u!1 &3286724983305640183
 GameObject:
   m_ObjectHideFlags: 0
@@ -752,10 +790,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60f180d7d1e0b4a4ca73b231d476c79b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpecialStageAlertUIFaceLock
-  cam: {fileID: 0}
   locked: 1
+  targetCamera: {fileID: 0}
   useCameraForward: 1
-  debugLog: 0
+  yawOffset: 180
+  keepUpright: 1
 --- !u!1 &7997000086705585614
 GameObject:
   m_ObjectHideFlags: 0

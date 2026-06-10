@@ -51,6 +51,11 @@ public class PlayerHealth : MonoBehaviour
         if (anim != null)
             anim.SetTrigger("Hurt");
 
+        PlayerMovementAudio audio = GetComponent<PlayerMovementAudio>();
+
+        if (audio != null)
+            audio.PlayHurt();
+
         NotifyHealthChanged();
 
         if (currentPips <= 0)

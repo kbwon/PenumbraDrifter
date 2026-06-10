@@ -11,6 +11,9 @@ public class ElevatorStageDirector : MonoBehaviour
     public ElevatorExteriorScroller exteriorScroller;
     public ElevatorWindowMotionDirector windowMotion;
 
+    [Header("Audio")]
+    public ElevatorAudio elevatorAudio;
+
     [Header("Waves")]
     public ElevatorWave wave01;
     public ElevatorWave wave02;
@@ -161,6 +164,9 @@ public class ElevatorStageDirector : MonoBehaviour
             dialogue = DialogueManager.Instance != null
                 ? DialogueManager.Instance
                 : FindFirstObjectByType<DialogueManager>();
+
+        if (elevatorAudio == null)
+            elevatorAudio = FindFirstObjectByType<ElevatorAudio>();
     }
 
     IEnumerator StageRoutine()
@@ -336,6 +342,9 @@ public class ElevatorStageDirector : MonoBehaviour
             exteriorScroller.Stop();
             StopWindowMotionOnly();
 
+            if (elevatorAudio != null)
+                elevatorAudio.StopElevatorLoop();
+
             if (buildingSetRail != null)
                 buildingSetRail.StopVertical();
 
@@ -345,6 +354,10 @@ public class ElevatorStageDirector : MonoBehaviour
         if (door != null)
         {
             SpecialStageDebugHUD.Log("Stage", "Door opening.", this);
+
+            if (elevatorAudio != null)
+                elevatorAudio.PlayDoor();
+
             yield return door.Open();
         }
 
@@ -413,6 +426,7 @@ public class ElevatorStageDirector : MonoBehaviour
             exteriorScroller.speed = Mathf.Lerp(startSpeed, targetSpeed, k);
             SyncWindowSpeedToScroller();
             SyncBuildingSetSpeedToScroller();
+            SyncElevatorAudioToScroller();
 
             yield return null;
         }
@@ -420,11 +434,24 @@ public class ElevatorStageDirector : MonoBehaviour
         exteriorScroller.speed = targetSpeed;
         SyncWindowSpeedToScroller();
         SyncBuildingSetSpeedToScroller();
+        SyncElevatorAudioToScroller();
+    }
+
+    void SyncElevatorAudioToScroller()
+    {
+        if (elevatorAudio == null || exteriorScroller == null)
+            return;
+
+        float referenceSpeed = Mathf.Max(normalScrollSpeed, fastScrollSpeed);
+        elevatorAudio.SetElevatorLoopBySpeed(exteriorScroller.speed, referenceSpeed);
     }
 
     IEnumerator ClearStage()
     {
         SpecialStageDebugHUD.Step("Arriving at final floor", this);
+
+        if (UIAudioManager.Instance != null)
+            UIAudioManager.Instance.PlayStageClear();
 
         if (player != null)
             player.SetInputLocked(true);
@@ -446,6 +473,10 @@ public class ElevatorStageDirector : MonoBehaviour
         if (door != null)
         {
             SpecialStageDebugHUD.Step("Opening final door", this);
+
+            if (elevatorAudio != null)
+                elevatorAudio.PlayDoor();
+
             yield return door.Open();
         }
 
@@ -466,7 +497,9 @@ public class ElevatorStageDirector : MonoBehaviour
             windowMotion.EndWindowMotion();
             SpecialStageDebugHUD.Log("Stage", "Window motion ended and restored.", this);
 
-            // 창이 실제로 전체화면/원래 해상도로 돌아오는 것을 보여주기 위한 대기
+            if (elevatorAudio != null)
+                elevatorAudio.StopAll();
+
             yield return new WaitForSecondsRealtime(windowRestoreWaitSeconds);
         }
 
@@ -523,6 +556,9 @@ public class ElevatorStageDirector : MonoBehaviour
         }
 
         yield return new WaitForSecondsRealtime(horizontalPrePauseSeconds);
+
+        if (elevatorAudio != null)
+            elevatorAudio.PlayHorizontalMove();
 
         // 2. 내부 흔들림과 실제 창 흔들림을 분리합니다.
         // 에디터에서는 motionFX만 보이고, 빌드에서는 windowMotion도 보입니다.

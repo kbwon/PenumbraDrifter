@@ -88,6 +88,9 @@ public class Stage1GoalGate : MonoBehaviour
 
         Vector3 exitDir = GetExitDirection(player.transform);
 
+        if (UIAudioManager.Instance != null)
+            UIAudioManager.Instance.PlayStageClear();
+
         SceneTransitionDirector.Instance.StartStageTransition(
             nextSceneName,
             nextEntryId,

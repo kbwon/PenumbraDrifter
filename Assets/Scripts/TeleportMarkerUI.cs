@@ -17,6 +17,10 @@ public class TeleportMarkerUI : MonoBehaviour
     [Header("Canvas")]
     public Canvas canvas;
 
+    [Header("Mode")]
+    public bool useCustomCursor = false;
+    public bool useTeleportMarker = false;
+
     void Awake()
     {
         if (!teleport && GameManager.Instance != null)
@@ -28,22 +32,32 @@ public class TeleportMarkerUI : MonoBehaviour
         if (!canvas)
             canvas = GetComponentInParent<Canvas>();
 
-        SetCursorVisible(true);
-        SetMarkerVisible(false);
+        ApplyDefaultCursorMode();
     }
 
     void OnEnable()
     {
-        Cursor.visible = false;
+        ApplyDefaultCursorMode();
     }
 
     void OnDisable()
     {
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     void Update()
     {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        if (!useCustomCursor && !useTeleportMarker)
+        {
+            SetCursorVisible(false);
+            SetMarkerVisible(false);
+            return;
+        }
+
         if (!teleport || !shadowCtrl || !canvas)
         {
             SetCursorVisible(false);
@@ -51,21 +65,45 @@ public class TeleportMarkerUI : MonoBehaviour
             return;
         }
 
-        UpdatePosition(cursorRect);
-        UpdatePosition(markerRect);
-
         bool canTeleport = false;
 
         if (shadowCtrl.IsInShadowMode)
             canTeleport = teleport.TryGetTeleportTarget(out _);
 
-        SetCursorVisible(!canTeleport);
-        SetMarkerVisible(canTeleport);
+        if (useCustomCursor)
+        {
+            UpdatePosition(cursorRect);
+            SetCursorVisible(!canTeleport);
+        }
+        else
+        {
+            SetCursorVisible(false);
+        }
+
+        if (useTeleportMarker && canTeleport)
+        {
+            UpdatePosition(markerRect);
+            SetMarkerVisible(true);
+        }
+        else
+        {
+            SetMarkerVisible(false);
+        }
+    }
+
+    void ApplyDefaultCursorMode()
+    {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        SetCursorVisible(false);
+        SetMarkerVisible(false);
     }
 
     void UpdatePosition(RectTransform targetRect)
     {
-        if (targetRect == null) return;
+        if (targetRect == null)
+            return;
 
         if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
         {
@@ -74,8 +112,14 @@ public class TeleportMarkerUI : MonoBehaviour
         else
         {
             RectTransform canvasRect = canvas.transform as RectTransform;
+
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvasRect, Input.mousePosition, canvas.worldCamera, out Vector2 localPos);
+                canvasRect,
+                Input.mousePosition,
+                canvas.worldCamera,
+                out Vector2 localPos
+            );
+
             targetRect.localPosition = localPos;
         }
     }

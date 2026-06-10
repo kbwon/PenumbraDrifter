@@ -1,27 +1,30 @@
 using UnityEngine;
 
-[DefaultExecutionOrder(10000)]
 public class SpecialStageAlertUIFaceLock : MonoBehaviour
 {
-    [Header("Refs")]
-    public Transform cam;
-
-    [Header("Lock")]
     public bool locked = true;
+
+    [Header("Camera")]
+    public Transform targetCamera;
     public bool useCameraForward = true;
 
-    [Header("Debug")]
-    public bool debugLog = false;
+    [Header("Rotation Offset")]
+    public float yawOffset = 180f;
+    public bool keepUpright = true;
 
-    void Awake()
-    {
-        ResolveCamera();
-    }
+    Quaternion lockedRotation;
+    bool hasLockedRotation;
 
     void OnEnable()
     {
-        ResolveCamera();
-        ApplyRotation();
+        CacheCamera();
+        ApplyLockRotation();
+    }
+
+    void Start()
+    {
+        CacheCamera();
+        ApplyLockRotation();
     }
 
     void LateUpdate()
@@ -29,54 +32,56 @@ public class SpecialStageAlertUIFaceLock : MonoBehaviour
         if (!locked)
             return;
 
-        ApplyRotation();
+        if (!hasLockedRotation)
+            ApplyLockRotation();
+
+        transform.rotation = lockedRotation;
     }
 
-    public void SetLocked(bool value)
+    void CacheCamera()
     {
-        locked = value;
-
-        if (locked)
-            ApplyRotation();
-    }
-
-    void ApplyRotation()
-    {
-        ResolveCamera();
-
-        if (cam == null)
+        if (targetCamera != null)
             return;
 
-        Vector3 forward;
+        if (GameManager.Instance != null && GameManager.Instance.MainCameraTransform != null)
+            targetCamera = GameManager.Instance.MainCameraTransform;
+        else if (Camera.main != null)
+            targetCamera = Camera.main.transform;
+    }
 
-        if (useCameraForward)
-        {
-            // 카메라 위치를 바라보지 않고,
-            // 카메라가 바라보는 방향의 반대 방향으로 고정
-            forward = -cam.forward;
-        }
-        else
-        {
-            // 기존 FaceCameraY 방식과 비슷한 위치 추적
-            forward = cam.position - transform.position;
-        }
+    void ApplyLockRotation()
+    {
+        CacheCamera();
+
+        if (targetCamera == null)
+            return;
+
+        Vector3 forward = useCameraForward
+            ? -targetCamera.forward
+            : targetCamera.forward;
 
         forward.y = 0f;
 
         if (forward.sqrMagnitude <= 0.0001f)
             return;
 
-        transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+        forward.Normalize();
+
+        Quaternion baseRotation = Quaternion.LookRotation(forward, Vector3.up);
+        lockedRotation = baseRotation * Quaternion.Euler(0f, yawOffset, 0f);
+
+        if (keepUpright)
+        {
+            Vector3 euler = lockedRotation.eulerAngles;
+            lockedRotation = Quaternion.Euler(0f, euler.y, 0f);
+        }
+
+        hasLockedRotation = true;
     }
 
-    void ResolveCamera()
+    public void Refresh()
     {
-        if (cam != null)
-            return;
-
-        if (GameManager.Instance != null && GameManager.Instance.MainCameraTransform != null)
-            cam = GameManager.Instance.MainCameraTransform;
-        else if (Camera.main != null)
-            cam = Camera.main.transform;
+        hasLockedRotation = false;
+        ApplyLockRotation();
     }
 }

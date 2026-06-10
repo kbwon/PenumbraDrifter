@@ -1352,8 +1352,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 50
+  m_fontSizeBase: 50
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1646,8 +1646,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 60
+  m_fontSizeBase: 60
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4053,6 +4053,8 @@ MonoBehaviour:
   markerRect: {fileID: 6676481729031911508}
   markerImage: {fileID: 1650691691197653577}
   canvas: {fileID: 4134405190464889585}
+  useCustomCursor: 0
+  useTeleportMarker: 1
 --- !u!1 &7903451818113933336
 GameObject:
   m_ObjectHideFlags: 0

@@ -205,6 +205,8 @@ GameObject:
   - component: {fileID: 7102189628573230541}
   - component: {fileID: 5618357879372056066}
   - component: {fileID: 2877779080383602264}
+  - component: {fileID: 2982334804993407471}
+  - component: {fileID: 2160202953803737206}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -266,6 +268,7 @@ MonoBehaviour:
   pushVisualLerpSpeed: 18
   pushAlphaLerpSpeed: 18
   scriptedMoveUsesGravity: 1
+  externalShadowExitSettleSeconds: 0.12
 --- !u!114 &7443147067082003208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -313,6 +316,11 @@ MonoBehaviour:
   movingHostSampleMarginFactor: 0.85
   lightProbeSurfaceOffset: 0.03
   shadowTransitionInvulnerableSeconds: 0.6
+  playerController: {fileID: 0}
+  shadowToggleCooldown: 0.25
+  startInShadowModeOnAwake: 0
+  infiniteShadowGauge: 0
+  ignoreShadowInputOverUI: 1
 --- !u!114 &5729267741954925929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -338,6 +346,7 @@ MonoBehaviour:
   maxTeleportDistance: 0
   floorOffset: 0.02
   wallOffset: 0.02
+  shadowAudio: {fileID: 0}
 --- !u!114 &4310955015492399966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -375,6 +384,7 @@ MonoBehaviour:
     m_Bits: 256
   anim: {fileID: 0}
   assassinateTriggerName: shadowAssassinate
+  warnWhenNoTarget: 0
 --- !u!54 &7491483228534178285
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -463,6 +473,67 @@ MonoBehaviour:
   bulletTimeScale: 0.3
   bulletTimeDuration: 0.22
   bulletTimeRestoreDuration: 0.06
+--- !u!114 &2982334804993407471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4711589185062946470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 160c38fa21c6c124ebd5c7f72075b076, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerShadowAudio
+  shadow: {fileID: 7443147067082003208}
+  player: {fileID: 5552458226092322471}
+  oneShotSource: {fileID: 0}
+  assassinationSource: {fileID: 0}
+  shadowMoveLoopSource: {fileID: 0}
+  shadowEnterClip: {fileID: 8300000, guid: 5a4e787e3ff81e24ebb5249d742c8a1c, type: 3}
+  shadowExitClip: {fileID: 8300000, guid: 5a4e787e3ff81e24ebb5249d742c8a1c, type: 3}
+  shadowEnterVolume: 0.6
+  shadowExitVolume: 0.5
+  shadowMoveLoopClip: {fileID: 8300000, guid: b356891d75cec764a8bfe6452d8b35c8, type: 3}
+  shadowMoveLoopVolume: 0.2
+  moveLoopFadeSpeed: 6
+  moveThreshold: 0.05
+  shadowBlinkClip: {fileID: 8300000, guid: 39147729575136740a145e84dcbe9669, type: 3}
+  shadowBlinkVolume: 0.3
+  bulletTimeClip: {fileID: 8300000, guid: 9597068f96b4b4b4bb0772140a1542cf, type: 3}
+  shadowAssassinationClip: {fileID: 8300000, guid: f594dab405e66b84c87617a840b0e91c, type: 3}
+  bulletTimeVolume: 0.7
+  shadowAssassinationVolume: 0.6
+  stopBulletTimeWhenAssassinationHits: 0
+  usePitchRandomness: 1
+  minPitch: 0.96
+  maxPitch: 1.04
+--- !u!114 &2160202953803737206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4711589185062946470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a394a6cfeca06fb40a87126ec8ef7568, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovementAudio
+  player: {fileID: 5552458226092322471}
+  shadow: {fileID: 7443147067082003208}
+  footstepSource: {fileID: 0}
+  oneShotSource: {fileID: 0}
+  footstepClip: {fileID: 8300000, guid: befe4bd487fc58e43969b8e179885ba1, type: 3}
+  walkVolume: 1
+  crouchVolume: 0.3
+  walkPitch: 1
+  crouchPitch: 0.85
+  footstepFadeSpeed: 8
+  moveThreshold: 0.05
+  hurtClip: {fileID: 8300000, guid: 27bf9d1757cf8314d9637dd1124ff6e1, type: 3}
+  hurtVolume: 0.3
+  hurtMinInterval: 0.08
 --- !u!1 &5571130826365743933
 GameObject:
   m_ObjectHideFlags: 0

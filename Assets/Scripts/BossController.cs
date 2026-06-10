@@ -81,6 +81,9 @@ public class BossController : EnemyController
     public BossGroundSlamTelegraph groundSlamTelegraph;
     public float groundSlamTelegraphSeconds = 0.9f;
 
+    [Header("Audio")]
+    public BossAudio bossAudio;
+
     ShadowInteractController pendingShadowGrabTarget;
     float lastShadowGrabRequestTime = -999f;
 
@@ -122,11 +125,17 @@ public class BossController : EnemyController
     public System.Action<bool> OnVulnerableChanged;
     public bool IsVulnerable => vulnerableToShadowAssassination;
 
+    public System.Action OnDeathFinished;
+    public bool IsDead => currentAction == BossAction.Dead;
+
     protected override void Start()
     {
         base.Start();
 
         bossConfig = config as BossConfig;
+
+        if (bossAudio == null)
+            bossAudio = GetComponent<BossAudio>();
 
         if (bossConfig == null)
             Debug.LogWarning($"{name}: BossController에는 BossConfig를 넣어야 합니다.", this);
@@ -163,6 +172,10 @@ public class BossController : EnemyController
         if (!combatActive || currentAction == BossAction.Dead)
         {
             StopMove();
+
+            if (bossAudio != null)
+                bossAudio.SetFootstepLoop(false);
+
             UpdateAnim();
             UpdateFlip(lastMoveDir);
             return;
@@ -170,6 +183,9 @@ public class BossController : EnemyController
 
         if (isAttacking)
         {
+            if (bossAudio != null)
+                bossAudio.SetFootstepLoop(false);
+
             UpdateBossAction();
             UpdateAnim();
             UpdateFlip(lastMoveDir);
@@ -177,6 +193,8 @@ public class BossController : EnemyController
         }
 
         UpdateBossCombat();
+
+        SyncBossFootstepAudio();
 
         UpdateAnim();
         UpdateFlip(lastMoveDir);
@@ -222,10 +240,14 @@ public class BossController : EnemyController
 
     void BeginAction(BossAction action, string triggerName, float duration)
     {
+        if (bossAudio != null)
+            bossAudio.SetFootstepLoop(false);
+
         currentAction = action;
         isAttacking = true;
         actionDamageDone = false;
         SetVulnerable(false);
+
 
         actionStartTime = Time.time;
         actionEndTime = Time.time + Mathf.Max(0.05f, duration);
@@ -326,6 +348,9 @@ public class BossController : EnemyController
 
     void StartChargeEnd()
     {
+        if (bossAudio != null)
+            bossAudio.StopCharge();
+
         BeginAction(BossAction.ChargeEnd, chargeEndTrigger, chargeEndFallbackSeconds);
     }
 
@@ -337,11 +362,21 @@ public class BossController : EnemyController
 
     void StartHurt()
     {
+        if (bossAudio != null)
+            bossAudio.PlayHurtDeath();
+
         BeginAction(BossAction.Hurt, hurtTrigger, hurtFallbackSeconds);
     }
 
     void StartDeath()
     {
+        if (bossAudio != null)
+        {
+            bossAudio.StopCharge();
+            bossAudio.StopFootstepLoop();
+            bossAudio.PlayHurtDeath();
+        }
+
         currentAction = BossAction.Dead;
         isAttacking = true;
         combatActive = false;
@@ -460,6 +495,9 @@ public class BossController : EnemyController
     void EndBossAction()
     {
         HideAllTelegraphs();
+
+        if (bossAudio != null)
+            bossAudio.StopCharge();
 
         EndWindupLock();
 
@@ -662,6 +700,9 @@ public class BossController : EnemyController
         actionDamageDone = false;
         SetVulnerable(false);
 
+        if (bossAudio != null)
+            bossAudio.PlayCharge();
+
         actionStartTime = Time.time;
 
         float duration = bossConfig != null ? bossConfig.chargeDuration : 0.75f;
@@ -690,6 +731,10 @@ public class BossController : EnemyController
         if (!isAttacking) return;
         if (currentAction != BossAction.Punch) return;
         if (actionDamageDone) return;
+
+        if (bossAudio != null)
+            bossAudio.PlayPunch();
+
         if (playerHealth == null || playerHealth.isDead) return;
 
         Vector3 a = transform.position;
@@ -709,6 +754,9 @@ public class BossController : EnemyController
         if (!isAttacking) return;
         if (currentAction != BossAction.GroundSlam) return;
         if (actionDamageDone) return;
+
+        if (bossAudio != null)
+            bossAudio.PlayGroundSlam();
 
         if (groundSlamTelegraph != null)
             groundSlamTelegraph.CompleteAndHide();
@@ -739,6 +787,9 @@ public class BossController : EnemyController
 
     public void Anim_BossShadowGrabPull()
     {
+        if (bossAudio != null)
+            bossAudio.PlayShadowGrab();
+
         if (playerController != null)
         {
             playerController.ForceNormalModeAfterExternalShadowExit(false);
@@ -800,7 +851,11 @@ public class BossController : EnemyController
     {
         StopMove();
         ZeroHorizontal();
-        // 여기서 BossStageDirector에 클리어 알림을 보내는 구조로 확장하면 됩니다.
+
+        if (UIAudioManager.Instance != null)
+            UIAudioManager.Instance.PlayStageClear();
+
+        OnDeathFinished?.Invoke();
     }
 
     bool HasAnimatorParameter(Animator targetAnim, string paramName, AnimatorControllerParameterType type)
@@ -1075,6 +1130,20 @@ public class BossController : EnemyController
         vulnerableToShadowAssassination = value;
         OnVulnerableChanged?.Invoke(value);
     }
+
+    void SyncBossFootstepAudio()
+    {
+        if (bossAudio == null)
+            return;
+
+        bool shouldPlay =
+            combatActive &&
+            currentAction == BossAction.None &&
+            desiredVelocity.sqrMagnitude > 0.0001f;
+
+        bossAudio.SetFootstepLoop(shouldPlay);
+    }
+
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()

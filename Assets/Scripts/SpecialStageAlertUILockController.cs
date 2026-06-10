@@ -54,6 +54,8 @@ public class SpecialStageAlertUILockController : MonoBehaviour
 
         faceLock.locked = true;
         faceLock.useCameraForward = true;
+        faceLock.yawOffset = 180f;
+        faceLock.Refresh();
     }
 
     void Log(string message)
