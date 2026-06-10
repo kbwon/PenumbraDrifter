@@ -484,6 +484,10 @@ public class ElevatorStageDirector : MonoBehaviour
 
         SpecialStageDebugHUD.Step("Start scene transition", this);
 
+        DemoProgress.SaveContinuePoint(DemoContinuePoint.BossStage);
+
+        SpecialStageDebugHUD.Step("Start scene transition", this);
+
         if (SceneTransitionDirector.Instance != null)
         {
             SceneTransitionDirector.Instance.StartStageTransition(
