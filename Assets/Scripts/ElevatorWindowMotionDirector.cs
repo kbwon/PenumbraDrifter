@@ -31,8 +31,10 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
     [Header("Native Window Move")]
     public bool useNativeWindowMoveOnWindows = true;
     public bool useNativePrimaryScreenSize = true;
-
     bool windowShakeActive;
+
+    [Header("Pause")]
+    public bool respectGamePause = true;
 
     [Header("Horizontal Motion")]
     [Range(0f, 1f)]
@@ -100,6 +102,12 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
             StopCoroutine(routine);
 
         routine = StartCoroutine(WindowMotionRoutine());
+    }
+    bool IsGamePaused()
+    {
+        return respectGamePause &&
+               GameManager.Instance != null &&
+               GameManager.Instance.IsPaused;
     }
 
     public void SetMotionSpeed(float elevatorSpeed)
@@ -235,57 +243,60 @@ public class ElevatorWindowMotionDirector : MonoBehaviour
         initialized = true;
 
         while (moving)
-        {
-            float dt = Time.unscaledDeltaTime;
-
-            if (motionSpeed01 > 0.001f)
 {
-    float speedMultiplier = GetVerticalEdgeSpeedMultiplier();
-    currentY -= maxPixelsPerSecond * motionSpeed01 * speedMultiplier * dt;
-
-    if (useVerticalEdgeBoost)
+    if (IsGamePaused())
     {
-        // 창이 위쪽으로 거의 다 사라졌을 때 바로 아래쪽으로 보냅니다.
-        // 기존처럼 완전히 화면 밖으로 다 나갈 때까지 기다리지 않습니다.
-        float topWarpY = -stageWindowHeight + warpWhenTopVisiblePixels;
+        yield return null;
+        continue;
+    }
 
-        if (currentY <= topWarpY)
+    float dt = Time.deltaTime;
+
+    if (motionSpeed01 > 0.001f)
+    {
+        float speedMultiplier = GetVerticalEdgeSpeedMultiplier();
+        currentY -= maxPixelsPerSecond * motionSpeed01 * speedMultiplier * dt;
+
+        if (useVerticalEdgeBoost)
         {
-            currentY = displayHeightCached + bottomReappearHiddenPixels;
+            float topWarpY = -stageWindowHeight + warpWhenTopVisiblePixels;
 
-            if (debugLog)
+            if (currentY <= topWarpY)
             {
-                SpecialStageDebugHUD.Log(
-                    "Window",
-                    $"Fast edge wrap. currentY={currentY:0.0}, speedMul={speedMultiplier:0.00}",
-                    this
-                );
+                currentY = displayHeightCached + bottomReappearHiddenPixels;
+
+                if (debugLog)
+                {
+                    SpecialStageDebugHUD.Log(
+                        "Window",
+                        $"Fast edge wrap. currentY={currentY:0.0}, speedMul={speedMultiplier:0.00}",
+                        this
+                    );
+                }
+            }
+        }
+        else
+        {
+            if (currentY <= upperOffscreenY)
+            {
+                currentY = lowerOffscreenY;
+
+                if (debugLog)
+                    SpecialStageDebugHUD.Log("Window", "Window loop reset to lower offscreen.", this);
             }
         }
     }
-    else
-    {
-        // 기존 방식 유지
-        if (currentY <= upperOffscreenY)
-        {
-            currentY = lowerOffscreenY;
 
-            if (debugLog)
-                SpecialStageDebugHUD.Log("Window", "Window loop reset to lower offscreen.", this);
-        }
+    if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
+    {
+        lastApplyTime = Time.unscaledTime;
+
+        int y = Mathf.RoundToInt(currentY);
+        MoveWindowTo(Mathf.RoundToInt(currentX), y);
     }
+
+    yield return null;
 }
-
-            if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
-            {
-                lastApplyTime = Time.unscaledTime;
-
-                int y = Mathf.RoundToInt(currentY);
-                MoveWindowTo(Mathf.RoundToInt(currentX), y);
-            }
-
-            yield return null;
-        }
 #endif
     }
 
@@ -297,19 +308,25 @@ IEnumerator ShakeRoutine(float seconds)
     float t = 0f;
 
     while (t < seconds && initialized && moving)
+{
+    if (IsGamePaused())
     {
-        t += Time.unscaledDeltaTime;
-
-        float sx = Mathf.Sin(Time.unscaledTime * shakeFrequency) * shakePixels;
-        float sy = Mathf.Cos(Time.unscaledTime * shakeFrequency * 0.73f) * shakePixels;
-
-        int px = Mathf.RoundToInt(currentX + sx);
-        int py = Mathf.RoundToInt(currentY + sy);
-
-        MoveWindowTo(px, py);
-
-        yield return new WaitForSecondsRealtime(moveApplyInterval);
+        yield return null;
+        continue;
     }
+
+    t += Time.deltaTime;
+
+    float sx = Mathf.Sin(Time.time * shakeFrequency) * shakePixels;
+    float sy = Mathf.Cos(Time.time * shakeFrequency * 0.73f) * shakePixels;
+
+    int px = Mathf.RoundToInt(currentX + sx);
+    int py = Mathf.RoundToInt(currentY + sy);
+
+    MoveWindowTo(px, py);
+
+    yield return new WaitForSeconds(moveApplyInterval);
+}
 
     windowShakeActive = false;
     MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
@@ -346,24 +363,30 @@ IEnumerator ShakeRoutine(float seconds)
     );
 
     while (t < duration)
+{
+    if (IsGamePaused())
     {
-        t += Time.unscaledDeltaTime;
-        float u = Mathf.Clamp01(t / duration);
-
-        float k = horizontalEaseCurve != null
-            ? horizontalEaseCurve.Evaluate(u)
-            : u * u * (3f - 2f * u);
-
-        currentX = Mathf.Lerp(start, target, k);
-
-        if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
-        {
-            lastApplyTime = Time.unscaledTime;
-            MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
-        }
-
         yield return null;
+        continue;
     }
+
+    t += Time.deltaTime;
+    float u = Mathf.Clamp01(t / duration);
+
+    float k = horizontalEaseCurve != null
+        ? horizontalEaseCurve.Evaluate(u)
+        : u * u * (3f - 2f * u);
+
+    currentX = Mathf.Lerp(start, target, k);
+
+    if (!windowShakeActive && Time.unscaledTime - lastApplyTime >= moveApplyInterval)
+    {
+        lastApplyTime = Time.unscaledTime;
+        MoveWindowTo(Mathf.RoundToInt(currentX), Mathf.RoundToInt(currentY));
+    }
+
+    yield return null;
+}
 
     currentX = target;
     x = Mathf.RoundToInt(currentX);

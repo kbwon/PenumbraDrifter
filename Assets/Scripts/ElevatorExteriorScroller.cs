@@ -27,6 +27,9 @@ public class ElevatorExteriorScroller : MonoBehaviour
     [Header("Base Move")]
     public float speed = 2f;
 
+    [Header("Pause")]
+    public bool respectGamePause = true;
+
     [Header("Debug")]
     public bool debugLog = true;
     public float debugPositionLogInterval = 1f;
@@ -68,6 +71,9 @@ public class ElevatorExteriorScroller : MonoBehaviour
 
     void Update()
     {
+        if (IsGamePaused())
+            return;
+
         if (!playing)
             return;
 
@@ -106,6 +112,13 @@ public class ElevatorExteriorScroller : MonoBehaviour
             lastDebugLogTime = Time.time;
             LogPositions();
         }
+    }
+
+    bool IsGamePaused()
+    {
+        return respectGamePause &&
+               GameManager.Instance != null &&
+               GameManager.Instance.IsPaused;
     }
 
     void LogPositions()

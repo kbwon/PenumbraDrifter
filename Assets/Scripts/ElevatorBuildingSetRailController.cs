@@ -60,6 +60,9 @@ public class ElevatorBuildingSetRailController : MonoBehaviour
 
     void Update()
     {
+        if (IsGamePaused())
+            return;
+
         if (!verticalPlaying)
             return;
 
@@ -74,9 +77,13 @@ public class ElevatorBuildingSetRailController : MonoBehaviour
             ? verticalDirection.normalized
             : Vector3.down;
 
-        currentRoot.localPosition += dir * currentVerticalSpeed * Time.unscaledDeltaTime;
+        currentRoot.localPosition += dir * currentVerticalSpeed * Time.deltaTime;
     }
 
+    bool IsGamePaused()
+    {
+        return GameManager.Instance != null && GameManager.Instance.IsPaused;
+    }
     void CacheInitialPositions()
     {
         if (sets == null)
@@ -213,7 +220,13 @@ public class ElevatorBuildingSetRailController : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.unscaledDeltaTime;
+            if (IsGamePaused())
+            {
+                yield return null;
+                continue;
+            }
+
+            t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
 
             float k = horizontalEaseCurve != null

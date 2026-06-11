@@ -416,7 +416,13 @@ public class ElevatorStageDirector : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.unscaledDeltaTime;
+            if (IsGamePaused())
+            {
+                yield return null;
+                continue;
+            }
+
+            t += Time.deltaTime;
             float u = Mathf.Clamp01(t / Mathf.Max(0.01f, duration));
 
             float k = elevatorEaseCurve != null
@@ -426,7 +432,6 @@ public class ElevatorStageDirector : MonoBehaviour
             exteriorScroller.speed = Mathf.Lerp(startSpeed, targetSpeed, k);
             SyncWindowSpeedToScroller();
             SyncBuildingSetSpeedToScroller();
-            SyncElevatorAudioToScroller();
 
             yield return null;
         }
@@ -444,6 +449,24 @@ public class ElevatorStageDirector : MonoBehaviour
 
         float referenceSpeed = Mathf.Max(normalScrollSpeed, fastScrollSpeed);
         elevatorAudio.SetElevatorLoopBySpeed(exteriorScroller.speed, referenceSpeed);
+    }
+
+    bool IsGamePaused()
+    {
+        return GameManager.Instance != null && GameManager.Instance.IsPaused;
+    }
+
+    IEnumerator WaitStageSeconds(float seconds)
+    {
+        float t = 0f;
+
+        while (t < seconds)
+        {
+            if (!IsGamePaused())
+                t += Time.deltaTime;
+
+            yield return null;
+        }
     }
 
     IEnumerator ClearStage()
@@ -500,7 +523,7 @@ public class ElevatorStageDirector : MonoBehaviour
             if (elevatorAudio != null)
                 elevatorAudio.StopAll();
 
-            yield return new WaitForSecondsRealtime(windowRestoreWaitSeconds);
+            yield return WaitStageSeconds(windowRestoreWaitSeconds);
         }
 
         if (followCamera != null)
@@ -555,7 +578,8 @@ public class ElevatorStageDirector : MonoBehaviour
             SpecialStageDebugHUD.Log("Stage", $"{label}: vertical scroll stopped.", this);
         }
 
-        yield return new WaitForSecondsRealtime(horizontalPrePauseSeconds);
+        yield return WaitStageSeconds(horizontalPrePauseSeconds);
+
 
         if (elevatorAudio != null)
             elevatorAudio.PlayHorizontalMove();
@@ -569,7 +593,7 @@ public class ElevatorStageDirector : MonoBehaviour
             StartCoroutine(windowMotion.ShakeWindow(horizontalWindowShakeSeconds));
 
         // 흔들림 길이에 따라 전환 시작이 늦어지지 않도록 고정 딜레이 사용
-        yield return new WaitForSecondsRealtime(horizontalEffectStartDelaySeconds);
+        yield return WaitStageSeconds(horizontalEffectStartDelaySeconds);
 
         if (backgroundPhases != null)
         {
@@ -602,12 +626,13 @@ public class ElevatorStageDirector : MonoBehaviour
             ));
         }
 
-        yield return new WaitForSecondsRealtime(horizontalTransitionSeconds);
+        yield return WaitStageSeconds(horizontalTransitionSeconds);
+
 
         if (stopWindowShakeAtHorizontalEnd && windowMotion != null)
             windowMotion.StopWindowShake();
         
-        yield return new WaitForSecondsRealtime(horizontalPostPauseSeconds);
+        yield return WaitStageSeconds(horizontalPostPauseSeconds);
 
         SpecialStageDebugHUD.Step($"{label} end", this);
     }
@@ -682,7 +707,7 @@ public class ElevatorStageDirector : MonoBehaviour
             StartCoroutine(windowMotion.ShakeWindow(seconds));
 
         // 어느 쪽 코루틴이 멈추더라도 스테이지 진행은 보장
-        yield return new WaitForSecondsRealtime(seconds);
+        yield return WaitStageSeconds(seconds);
 
         SpecialStageDebugHUD.Log("Stage", "ShakeGameAndWindow finished by realtime timer.", this);
     }

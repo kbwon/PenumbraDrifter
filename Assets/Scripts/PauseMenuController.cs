@@ -37,6 +37,10 @@ public class PauseMenuController : MonoBehaviour
     public KeyCode pauseKey = KeyCode.Escape;
     public string titleSceneName = "TitleScene";
 
+    [Header("Audio Pause")]
+    public bool pauseAudioOnPauseMenu = true;
+    bool previousAudioListenerPause;
+
     bool isOpen;
 
     void Start()
@@ -194,6 +198,12 @@ public class PauseMenuController : MonoBehaviour
             GameManager.Instance.SetPaused(true);
         else
             Time.timeScale = 0f;
+
+        if (pauseAudioOnPauseMenu)
+        {
+            previousAudioListenerPause = AudioListener.pause;
+            AudioListener.pause = true;
+        }
     }
 
     public void ResumeGame()
@@ -210,6 +220,9 @@ public class PauseMenuController : MonoBehaviour
             GameManager.Instance.SetPaused(false);
         else
             Time.timeScale = 1f;
+
+        if (pauseAudioOnPauseMenu)
+            AudioListener.pause = previousAudioListenerPause;
 
         PlayerController player = GameManager.Instance != null
             ? GameManager.Instance.player
@@ -294,5 +307,8 @@ public class PauseMenuController : MonoBehaviour
             GameManager.Instance.SetPaused(false);
 
         Time.timeScale = 1f;
+
+        if (pauseAudioOnPauseMenu)
+            AudioListener.pause = previousAudioListenerPause;
     }
 }
