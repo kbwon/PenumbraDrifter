@@ -543,7 +543,7 @@ MonoBehaviour:
   spottedMinInterval: 0.25
   meleeAttackClip: {fileID: 0}
   rangedAttackClip: {fileID: 8300000, guid: 5fdedaf58853af040b5dd1982e40c007, type: 3}
-  meleeAttackVolume: 0.55
+  meleeAttackVolume: 0.3
   rangedAttackVolume: 0.55
   randomizeOneShotPitch: 1
   minPitch: 0.96

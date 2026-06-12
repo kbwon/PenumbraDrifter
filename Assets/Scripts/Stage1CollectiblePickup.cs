@@ -20,6 +20,9 @@ public class Stage1CollectiblePickup : MonoBehaviour
         PlayerController player = other.GetComponentInParent<PlayerController>();
         if (player == null) return;
 
+        if (UIAudioManager.Instance != null)
+            UIAudioManager.Instance.PlayItemPickup();
+
         collected = true;
 
         if (Stage1ObjectiveState.Instance != null)

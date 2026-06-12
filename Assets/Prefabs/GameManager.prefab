@@ -160,19 +160,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UIAudioManager
   source: {fileID: 0}
   buttonClickClip: {fileID: 8300000, guid: a8b780bfd85350249babe5343e64590f, type: 3}
-  dialogueTypingClip: {fileID: 0}
+  dialogueTypingClip: {fileID: 8300000, guid: dd7aed9dbc0cda54a853922a37c1ab79, type: 3}
   gameOverClip: {fileID: 8300000, guid: 659157cbc3a686145824ec4ca29bdfde, type: 3}
   stageClearClip: {fileID: 8300000, guid: 85e7d07f2b72c8d47be1fc993e6682a8, type: 3}
-  buttonClickVolume: 0.5
+  itemPickupClip: {fileID: 8300000, guid: 371e2afbf76f14e4d843993002ed0ae7, type: 3}
+  buttonClickVolume: 0.2
   dialogueTypingVolume: 0.25
-  gameOverVolume: 0.75
-  stageClearVolume: 0.75
+  gameOverVolume: 0.6
+  stageClearVolume: 0.6
+  itemPickupVolume: 0.5
   typingMinInterval: 0.035
   randomizeTypingPitch: 1
   typingMinPitch: 0.96
   typingMaxPitch: 1.04
   autoRegisterSceneButtons: 1
   includeInactiveButtons: 1
+  ignoreButtonRootTag: PauseMenu
+  dialogueTypingSource: {fileID: 0}
+  useDialogueTypingLoop: 1
+  dialogueTypingLoopVolume: 0.5
+  skipWhenGamePaused: 1
 --- !u!1 &3456524071325793763
 GameObject:
   m_ObjectHideFlags: 0

@@ -493,17 +493,17 @@ MonoBehaviour:
   shadowEnterClip: {fileID: 8300000, guid: 5a4e787e3ff81e24ebb5249d742c8a1c, type: 3}
   shadowExitClip: {fileID: 8300000, guid: 5a4e787e3ff81e24ebb5249d742c8a1c, type: 3}
   shadowEnterVolume: 0.6
-  shadowExitVolume: 0.5
+  shadowExitVolume: 0.6
   shadowMoveLoopClip: {fileID: 8300000, guid: b356891d75cec764a8bfe6452d8b35c8, type: 3}
   shadowMoveLoopVolume: 0.2
   moveLoopFadeSpeed: 6
   moveThreshold: 0.05
   shadowBlinkClip: {fileID: 8300000, guid: 39147729575136740a145e84dcbe9669, type: 3}
-  shadowBlinkVolume: 0.3
+  shadowBlinkVolume: 0.2
   bulletTimeClip: {fileID: 8300000, guid: 9597068f96b4b4b4bb0772140a1542cf, type: 3}
   shadowAssassinationClip: {fileID: 8300000, guid: f594dab405e66b84c87617a840b0e91c, type: 3}
-  bulletTimeVolume: 0.7
-  shadowAssassinationVolume: 0.6
+  bulletTimeVolume: 0.9
+  shadowAssassinationVolume: 0.3
   stopBulletTimeWhenAssassinationHits: 0
   usePitchRandomness: 1
   minPitch: 0.96

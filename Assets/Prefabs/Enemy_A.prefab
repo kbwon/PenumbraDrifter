@@ -761,12 +761,12 @@ MonoBehaviour:
   footstepSource: {fileID: 0}
   oneShotSource: {fileID: 0}
   footstepClip: {fileID: 8300000, guid: befe4bd487fc58e43969b8e179885ba1, type: 3}
-  footstepVolume: 0.25
+  footstepVolume: 0.3
   footstepPitch: 0.9
   footstepFadeSpeed: 8
   moveThreshold: 0.05
   spottedClip: {fileID: 8300000, guid: d490026542c603f49a3771c98d473772, type: 3}
-  spottedVolume: 0.7
+  spottedVolume: 0.5
   spottedMinInterval: 0.25
   meleeAttackClip: {fileID: 8300000, guid: b019f0c342a3c2644a768315be7212e6, type: 3}
   rangedAttackClip: {fileID: 0}

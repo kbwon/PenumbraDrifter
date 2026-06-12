@@ -141,10 +141,6 @@ public class Stage1BriefingDirector : MonoBehaviour
 
         ResolveRefs();
 
-        // 브리핑 시작 즉시 입력 잠금
-        SetBriefingControlLocked(true);
-        MaintainBriefingInputLock();
-
         if (shadow != null)
         {
             shadow.ForceExitShadowMode();
@@ -162,11 +158,17 @@ public class Stage1BriefingDirector : MonoBehaviour
             followCamera.SnapNow();
         }
 
-        // 플레이어가 걸어 나오는 장면을 아주 잠깐 보여준 뒤 첫 대사 출력
+        // 중요:
+        // 카메라가 먼저 finalGameplayYaw로 잡힌 뒤,
+        // PlayerController / FaceCameraY가 한 번 카메라를 보고 정렬할 시간을 줍니다.
+        yield return null;
+
+        // 그 다음부터 브리핑 동안 회전을 고정합니다.
+        SetBriefingControlLocked(true);
+        MaintainBriefingInputLock();
+
         if (startDelay > 0f)
             yield return new WaitForSeconds(startDelay);
-
-        MaintainBriefingInputLock();
 
         if (dialogue != null && openingLines != null && openingLines.Length > 0)
         {
@@ -236,6 +238,10 @@ public class Stage1BriefingDirector : MonoBehaviour
         briefingInputLockActive = false;
         SetBriefingControlLocked(false);
 
+        if (shadow != null)
+            shadow.SetShadowToggleLocked(false);
+
+        skipRequested = false;
         playing = false;
     }
 

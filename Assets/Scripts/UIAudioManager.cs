@@ -15,12 +15,17 @@ public class UIAudioManager : MonoBehaviour
     public AudioClip dialogueTypingClip;
     public AudioClip gameOverClip;
     public AudioClip stageClearClip;
+    public AudioClip itemPickupClip;
 
     [Header("Volumes")]
     [Range(0f, 1f)] public float buttonClickVolume = 0.5f;
     [Range(0f, 1f)] public float dialogueTypingVolume = 0.25f;
     [Range(0f, 1f)] public float gameOverVolume = 0.75f;
     [Range(0f, 1f)] public float stageClearVolume = 0.75f;
+    [Range(0f, 1f)] public float itemPickupVolume = 0.5f;
+
+    float lastItemPickupTime = -999f;
+    float itemPickupMinInterval = 0.05f;
 
     [Header("Typing")]
     public float typingMinInterval = 0.035f;
@@ -32,11 +37,20 @@ public class UIAudioManager : MonoBehaviour
     public bool autoRegisterSceneButtons = true;
     public bool includeInactiveButtons = true;
 
+    [Header("Register Filter")]
+    public string ignoreButtonRootTag = "PauseMenu";
+
+    [Header("Dialogue Typing Loop")]
+    public AudioSource dialogueTypingSource;
+    public bool useDialogueTypingLoop = true;
+    [Range(0f, 1f)] public float dialogueTypingLoopVolume = 0.18f;
+
     float lastTypingTime = -999f;
     float lastStageClearTime = -999f;
     float stageClearMinInterval = 1.0f;
 
     GameManager subscribedGameManager;
+    public bool skipWhenGamePaused = true;
 
     void Awake()
     {
@@ -55,6 +69,15 @@ public class UIAudioManager : MonoBehaviour
         source.playOnAwake = false;
         source.loop = false;
         source.spatialBlend = 0f;
+
+        if (dialogueTypingSource == null)
+            dialogueTypingSource = gameObject.AddComponent<AudioSource>();
+
+        dialogueTypingSource.playOnAwake = false;
+        dialogueTypingSource.loop = true;
+        dialogueTypingSource.spatialBlend = 0f;
+        dialogueTypingSource.volume = dialogueTypingLoopVolume;
+        dialogueTypingSource.clip = dialogueTypingClip;
     }
 
     void OnEnable()
@@ -129,6 +152,9 @@ public class UIAudioManager : MonoBehaviour
             if (button == null)
                 continue;
 
+            if (IsUnderIgnoredRoot(button.transform))
+                continue;
+
             UIAudioButtonClick clickAudio = button.GetComponent<UIAudioButtonClick>();
 
             if (clickAudio == null)
@@ -138,8 +164,32 @@ public class UIAudioManager : MonoBehaviour
         }
     }
 
+    bool IsUnderIgnoredRoot(Transform target)
+    {
+        if (target == null)
+            return false;
+
+        Transform t = target;
+
+        while (t != null)
+        {
+            if (t.CompareTag(ignoreButtonRootTag))
+                return true;
+
+            t = t.parent;
+        }
+
+        return false;
+    }
+
     public void PlayButtonClick()
     {
+        if (skipWhenGamePaused &&
+        GameManager.Instance != null &&
+        GameManager.Instance.IsPaused)
+        {
+            return;
+        }
         PlayOneShot(buttonClickClip, buttonClickVolume, 1f);
     }
 
@@ -171,6 +221,15 @@ public class UIAudioManager : MonoBehaviour
         PlayOneShot(stageClearClip, stageClearVolume, 1f);
     }
 
+    public void PlayItemPickup()
+    {
+        if (Time.unscaledTime - lastItemPickupTime < itemPickupMinInterval)
+            return;
+
+        lastItemPickupTime = Time.unscaledTime;
+        PlayOneShot(itemPickupClip, itemPickupVolume, 1f);
+    }
+
     void PlayOneShot(AudioClip clip, float volume, float pitch)
     {
         if (source == null || clip == null)
@@ -178,5 +237,33 @@ public class UIAudioManager : MonoBehaviour
 
         source.pitch = pitch;
         source.PlayOneShot(clip, volume);
+    }
+
+    public void StartDialogueTypingLoop()
+    {
+        if (!useDialogueTypingLoop)
+            return;
+
+        if (dialogueTypingSource == null || dialogueTypingClip == null)
+            return;
+
+        if (dialogueTypingSource.clip != dialogueTypingClip)
+            dialogueTypingSource.clip = dialogueTypingClip;
+
+        dialogueTypingSource.volume = dialogueTypingLoopVolume;
+
+        if (!dialogueTypingSource.isPlaying)
+            dialogueTypingSource.Play();
+    }
+
+    public void StopDialogueTypingLoop()
+    {
+        if (!useDialogueTypingLoop)
+            return;
+
+        if (dialogueTypingSource == null)
+            return;
+
+        dialogueTypingSource.Stop();
     }
 }

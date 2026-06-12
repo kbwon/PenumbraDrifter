@@ -175,6 +175,9 @@ public class DialogueManager : MonoBehaviour
 
         if (useTypewriter && charsPerSecond > 0f)
         {
+            if (playTypingSound && UIAudioManager.Instance != null)
+                UIAudioManager.Instance.StartDialogueTypingLoop();
+
             float interval = 1f / charsPerSecond;
             float timer = 0f;
             int index = 0;
@@ -182,7 +185,12 @@ public class DialogueManager : MonoBehaviour
             while (index < fullText.Length)
             {
                 if (SkipAllRequested)
+                {
+                    if (playTypingSound && UIAudioManager.Instance != null)
+                        UIAudioManager.Instance.StopDialogueTypingLoop();
+
                     yield break;
+                }
 
                 if (WasContinuePressed())
                 {
@@ -198,22 +206,13 @@ public class DialogueManager : MonoBehaviour
                     timer -= interval;
                     index++;
                     dialogueText.text = fullText.Substring(0, index);
-
-                    if (playTypingSound && UIAudioManager.Instance != null)
-                    {
-                        char typedChar = fullText[index - 1];
-
-                        if (!char.IsWhiteSpace(typedChar) &&
-                            charsPerTypingSound > 0 &&
-                            index % charsPerTypingSound == 0)
-                        {
-                            UIAudioManager.Instance.PlayDialogueTyping();
-                        }
-                    }
                 }
 
                 yield return null;
             }
+
+            if (playTypingSound && UIAudioManager.Instance != null)
+                UIAudioManager.Instance.StopDialogueTypingLoop();
         }
         else
         {

@@ -1083,7 +1083,7 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 0a317f70f456de2458cbcb9196b4ebb1, type: 3}
   - sceneName: BossStage
     clip: {fileID: 8300000, guid: b563c59d25d9f974cbf999a4eed22030, type: 3}
-  bgmVolume: 0.35
+  bgmVolume: 0.2
   useFade: 1
   fadeOutSeconds: 0.5
   fadeInSeconds: 0.7
@@ -5182,9 +5182,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8538200368916879535, guid: b910b9fd35a7a2946bba23d5f0431c4a, type: 3}
+      propertyPath: buttonClickVolume
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8538200368916879535, guid: b910b9fd35a7a2946bba23d5f0431c4a, type: 3}
       propertyPath: dialogueTypingClip
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 8300000, guid: dd7aed9dbc0cda54a853922a37c1ab79, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
