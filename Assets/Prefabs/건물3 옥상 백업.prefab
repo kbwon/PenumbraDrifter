@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 2033634845671784325}
   - component: {fileID: 3795910871553099572}
   - component: {fileID: 2953164428831780564}
-  - component: {fileID: 5767047261758379855}
+  - component: {fileID: 4490222052666040067}
   m_Layer: 7
-  m_Name: "\uAC74\uBB3C3 \uC625\uC0C1"
+  m_Name: "\uAC74\uBB3C3 \uC625\uC0C1 \uBC31\uC5C5"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -141,8 +141,8 @@ MonoBehaviour:
   restoreOriginalImmediately: 1
   useShadowProxy: 1
   shadowProxyNameSuffix: _ShadowOnlyProxy
---- !u!65 &5767047261758379855
-BoxCollider:
+--- !u!64 &4490222052666040067
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -159,6 +159,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2.2, y: 0.5, z: 2}
-  m_Center: {x: 0, y: 0.25, z: 0}
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1678039485017353245, guid: b77664042e9028049aa11e4bf85673d6, type: 3}
