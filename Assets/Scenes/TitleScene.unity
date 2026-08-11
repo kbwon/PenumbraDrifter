@@ -392,6 +392,8 @@ MonoBehaviour:
   continueButton: {fileID: 1135737610}
   settingsButton: {fileID: 1494359036}
   quitButton: {fileID: 1703074561}
+  continueButtonText: {fileID: 941916293}
+  continueDisabledTextAlpha: 0.4
   settingsPanel: {fileID: 1111659903}
   volumeSlider: {fileID: 1195011252}
   sceneLoader: {fileID: 133509575}

@@ -8387,11 +8387,16 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Moving Obstructions
-  popupBody: You can hide behind shadows created by movable obstructions. Press F
-    near the obstructions and move to push it.
+  popupTitle: PUSHING OBJECTS
+  popupBody: '[F] PUSH
+
+
+    Hold F near a movable object to push it.
+
+    Moving
+    objects can also change nearby shadows.'
   popupIcon: {fileID: 0}
-  popupKeyA: {fileID: 21300000, guid: 8846fee262340c346a9d5c787326ba55, type: 3}
+  popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
   lockPlayerInput: 1
   showMission: 1
@@ -14024,13 +14029,16 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Shadow Mode
-  popupBody: 'You can enter Shadow Mode while standing on a shadow.
+  popupTitle: SHADOW MODE
+  popupBody: '[RMB] ENTER / EXIT SHADOW MODE
 
-    Right-click
-    to enter Shadow Mode, and right-click again to leave it.'
+
+    You can enter Shadow Mode while
+    standing in a shadow.
+
+    The Shadow Gauge drains while Shadow Mode is active.'
   popupIcon: {fileID: 0}
-  popupKeyA: {fileID: 21300000, guid: b2bd878f614491f429635adbb153cf8a, type: 3}
+  popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
   lockPlayerInput: 1
   showMission: 1
@@ -16454,11 +16462,16 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Shadow Blink
-  popupBody: While in Shadow Mode, aim at another shadow and press Space to blink
-    to it.
+  popupTitle: SHADOW BLINK
+  popupBody: '[LMB] SHADOW BLINK
+
+
+    While in Shadow Mode, blink to another valid
+    shadow.
+
+    Shadow Blink has a cooldown after use.'
   popupIcon: {fileID: 0}
-  popupKeyA: {fileID: 21300000, guid: 8046771abafeb6046887d6d265518f66, type: 3}
+  popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
   lockPlayerInput: 1
   showMission: 0
@@ -17719,13 +17732,14 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Shadow Assassination
-  popupBody: 'While in Shadow Mode, you can assassinate an enemy by getting close
-    enough.
+  popupTitle: SHADOW ASSASSINATION
+  popupBody: '[LMB] ASSASSINATE
 
-    Press Left-click near an enemy to perform a shadow assassination.'
+
+    While in Shadow Mode, approach an enemy and
+    click to assassinate them.'
   popupIcon: {fileID: 0}
-  popupKeyA: {fileID: 21300000, guid: f91010352cd12e642a95037c4216899a, type: 3}
+  popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
   lockPlayerInput: 1
   showMission: 0
@@ -18226,11 +18240,12 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Crouch-Walking
-  popupBody: 'Hold Shift to crouch-walk.
+  popupTitle: CROUCH
+  popupBody: '[LEFT SHIFT] CROUCH
 
-    Sneak past enemies, but stay out of
-    their line of sight.'
+
+    Crouch to move quietly and avoid attracting
+    enemies.'
   popupIcon: {fileID: 0}
   popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
@@ -19865,11 +19880,12 @@ MonoBehaviour:
   triggerOnce: 1
   showPopup: 1
   popupTitle: Light and Shadow
-  popupBody: 'Areas directly lit by light are not safe shadow paths.
+  popupBody: 'Light blocks your path while in Shadow Mode.
 
-    If the
-    shadow is broken, you cannot move through it. Find another shadow route.'
-  popupIcon: {fileID: 21300000, guid: 44acb1b1c37571e498f718ec6666e27f, type: 3}
+
+    You cannot move
+    through lit areas or enter Shadow Mode without a valid shadow.'
+  popupIcon: {fileID: 0}
   popupKeyA: {fileID: 0}
   popupKeyB: {fileID: 0}
   lockPlayerInput: 1
@@ -20252,14 +20268,13 @@ MonoBehaviour:
   ui: {fileID: 0}
   triggerOnce: 1
   showPopup: 1
-  popupTitle: Movement and Camera Rotation
-  popupBody: 'Use WASD to move.
+  popupTitle: BASIC MOVEMENT
+  popupBody: '[W] [A] [S] [D] MOVE
 
-    Press Q and E to rotate the camera and look
-    around.'
+    [Q] [E] ROTATE CAMERA'
   popupIcon: {fileID: 0}
-  popupKeyA: {fileID: 21300000, guid: 7e8814bdd14933546907bc0a53021287, type: 3}
-  popupKeyB: {fileID: 21300000, guid: eaec39416ad536f409982ed799127641, type: 3}
+  popupKeyA: {fileID: 0}
+  popupKeyB: {fileID: 0}
   lockPlayerInput: 1
   showMission: 1
   missionText: 
@@ -20929,10 +20944,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2737922857147971408, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+      propertyPath: m_fontSize
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2737922857147971408, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 3014706271670449961, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
       propertyPath: playerHealth
       value: 
       objectReference: {fileID: 1025952898}
+    - target: {fileID: 3303983861807557258, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+      propertyPath: m_fontSize
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3303983861807557258, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 3701041053582345634, guid: 7decb5b0bf51a514e8e0d4718b6cc17b, type: 3}
       propertyPath: m_fontSize
       value: 10
